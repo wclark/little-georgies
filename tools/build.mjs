@@ -17,4 +17,6 @@ for (const entry of ["index.html", "src", "assets"]) {
   cpSync(resolve(root, entry), resolve(gameDist, entry), { recursive: true });
 }
 
+rmSync(resolve(gameDist, "assets/images/little-georgie-reference.png"), { force: true });
+
 console.log(`Built static site in ${dist}`);
