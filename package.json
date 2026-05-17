@@ -1,0 +1,16 @@
+{
+  "name": "little-georgies",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A static browser game about Little Georgies, apples, land rent, and the commons.",
+  "scripts": {
+    "dev": "node tools/dev-server.mjs",
+    "build": "node tools/build.mjs",
+    "check:content": "node tools/check-content.mjs",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
