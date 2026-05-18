@@ -12,6 +12,7 @@ import {
   getRoleMoodCounts,
   getSpecialistReadiness,
   isSeasonOver,
+  setChiefPolicy,
   setPlan,
   setRolePlan
 } from "./game.js";
@@ -102,6 +103,13 @@ document.addEventListener("click", (event) => {
   if (action.startsWith("role-plan:")) {
     const [, role, plan] = action.split(":");
     state = setRolePlan(state, role, plan);
+    render();
+    return;
+  }
+
+  if (action.startsWith("chief-policy:")) {
+    const [, category, resource, nextValue] = action.split(":");
+    state = setChiefPolicy(state, category, resource, nextValue === "on");
     render();
   }
 });
@@ -216,14 +224,7 @@ function renderSoloFeature() {
           <li>A fed worker becomes tired; a fed rester becomes happy.</li>
           <li>No apple means the next morning starts broken.</li>
         </ul>
-        ${renderPlanControl({
-          activePlan: georgie.plan,
-          label: role.label,
-          workAction: `plan:${georgie.id}:work`,
-          restAction: `plan:${georgie.id}:rest`,
-          workLabel: role.workLabel,
-          restLabel: role.restLabel
-        })}
+        ${renderGeorgiePlanControl(georgie, role.label)}
       </div>
     </article>
   `;
@@ -242,14 +243,7 @@ function renderBandFeature() {
               <strong>${georgie.name}</strong>
               <small>${statusLabel[georgie.status]} - ${role.workSummary}</small>
             </div>
-            ${renderPlanControl({
-              activePlan: georgie.plan,
-              label: `${georgie.name} plan`,
-              workAction: `plan:${georgie.id}:work`,
-              restAction: `plan:${georgie.id}:rest`,
-              workLabel: role.workLabel,
-              restLabel: role.restLabel
-            })}
+            ${renderGeorgiePlanControl(georgie, `${georgie.name} plan`)}
           </article>
         `;
       }).join("")}
@@ -302,14 +296,7 @@ function renderRoleDetailFeature() {
           <h3>${role.plural}</h3>
           <p>${role.workSummary}</p>
           ${renderSummaryStats(getRoleStats(viewPath.role))}
-          ${renderPlanControl({
-            activePlan: getRolePlan(viewPath.role),
-            label: `${role.plural} plan`,
-            workAction: `role-plan:${viewPath.role}:work`,
-            restAction: `role-plan:${viewPath.role}:rest`,
-            workLabel: role.workLabel,
-            restLabel: role.restLabel
-          })}
+          ${renderRolePlanControl(viewPath.role, `${role.plural} plan`)}
         </div>
       </article>
       <div class="tile-grid individual-tile-grid" aria-label="${role.plural}">
@@ -333,14 +320,8 @@ function renderPersonDetailFeature() {
           <h3>${formatGeorgieName(georgie)}</h3>
           <p>${getPersonSummary(georgie)}</p>
           ${renderSummaryStats(getPersonStats(georgie))}
-          ${renderPlanControl({
-            activePlan: getGeorgiePlan(georgie),
-            label: `${formatGeorgieName(georgie)} plan`,
-            workAction: `plan:${georgie.id}:work`,
-            restAction: `plan:${georgie.id}:rest`,
-            workLabel: role.workLabel,
-            restLabel: role.restLabel
-          })}
+          ${renderGeorgiePlanControl(georgie, `${formatGeorgieName(georgie)} plan`)}
+          ${georgie.role === "chief" ? renderChiefPolicyControls() : ""}
         </div>
       </article>
     </div>
@@ -358,14 +339,8 @@ function renderChiefFocus(chief) {
         <h3>Chief Henry</h3>
         <p>${role.workSummary}</p>
         ${renderSummaryStats(getPersonStats(chief))}
-        ${renderPlanControl({
-          activePlan: getGeorgiePlan(chief),
-          label: "Chief Henry plan",
-          workAction: `plan:${chief.id}:work`,
-          restAction: `plan:${chief.id}:rest`,
-          workLabel: role.workLabel,
-          restLabel: role.restLabel
-        })}
+        ${renderGeorgiePlanControl(chief, "Chief Henry plan")}
+        ${renderChiefPolicyControls()}
       </div>
     </article>
   `;
@@ -383,14 +358,7 @@ function renderRoleTile(counts) {
         <small>${counts.happy} happy / ${counts.tired} tired / ${counts.broken} broken</small>
         <small>${getRoleProductionSummary(counts.role)}</small>
       </button>
-      ${renderPlanControl({
-        activePlan: getRolePlan(counts.role),
-        label: `${role.plural} plan`,
-        workAction: `role-plan:${counts.role}:work`,
-        restAction: `role-plan:${counts.role}:rest`,
-        workLabel: role.workLabel,
-        restLabel: role.restLabel
-      })}
+      ${renderRolePlanControl(counts.role, `${role.plural} plan`)}
     </article>
   `;
 }
@@ -406,14 +374,7 @@ function renderPersonTile(georgie) {
         <strong>${formatGeorgieName(georgie)}</strong>
         <small>${statusLabel[georgie.status]} - ${getPersonOutput(georgie)}</small>
       </button>
-      ${renderPlanControl({
-        activePlan: getGeorgiePlan(georgie),
-        label: `${formatGeorgieName(georgie)} plan`,
-        workAction: `plan:${georgie.id}:work`,
-        restAction: `plan:${georgie.id}:rest`,
-        workLabel: role.workLabel,
-        restLabel: role.restLabel
-      })}
+      ${renderGeorgiePlanControl(georgie, `${formatGeorgieName(georgie)} plan`)}
     </article>
   `;
 }
@@ -439,19 +400,78 @@ function renderSummaryStats(stats) {
   `;
 }
 
-function renderPlanControl({ activePlan, label, workAction, restAction, workLabel, restLabel }) {
+function renderRolePlanControl(role, label) {
+  return renderPlanControl({
+    activePlan: getRolePlan(role),
+    label,
+    options: getRolePlanOptions(role).map((plan) => ({
+      plan,
+      action: `role-plan:${role}:${plan}`,
+      label: getPlanLabel(role, plan),
+      disabled: isRolePlanDisabled(role, plan)
+    }))
+  });
+}
+
+function renderGeorgiePlanControl(georgie, label) {
+  return renderPlanControl({
+    activePlan: getGeorgiePlan(georgie),
+    label,
+    options: getGeorgiePlanOptions(georgie).map((option) => ({
+      plan: option.plan,
+      action: `plan:${georgie.id}:${option.plan}`,
+      label: getPlanLabel(georgie.role, option.plan),
+      disabled: option.disabled
+    }))
+  });
+}
+
+function renderPlanControl({ activePlan, label, options }) {
   return `
-    <div class="segmented-control" aria-label="${label}">
-      <button
-        type="button"
-        class="${activePlan === "work" ? "is-active" : ""}"
-        data-action="${workAction}"
-      >${workLabel}</button>
-      <button
-        type="button"
-        class="${activePlan === "rest" ? "is-active" : ""}"
-        data-action="${restAction}"
-      >${restLabel}</button>
+    <div class="segmented-control option-count-${options.length}" aria-label="${label}">
+      ${options.map((option) => `
+        <button
+          type="button"
+          class="${activePlan === option.plan ? "is-active" : ""}"
+          data-action="${option.action}"
+          ${option.disabled ? "disabled" : ""}
+        >${option.label}</button>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderChiefPolicyControls() {
+  return `
+    <div class="chief-policy" aria-label="Chief Henry resource policy">
+      ${renderResourcePolicyRow("levy", "Levy")}
+      ${renderResourcePolicyRow("distribute", "Distribute")}
+    </div>
+  `;
+}
+
+function renderResourcePolicyRow(category, label) {
+  const resources = [
+    { key: "apples", label: "Apples" },
+    { key: "baskets", label: "Baskets" },
+    { key: "houses", label: "Houses" }
+  ];
+
+  return `
+    <div class="resource-policy-row">
+      <span>${label}</span>
+      <div class="resource-toggle-row">
+        ${resources.map((resource) => {
+          const enabled = Boolean(state.chiefPolicy?.[category]?.[resource.key]);
+          return `
+            <button
+              type="button"
+              class="resource-toggle ${enabled ? "is-active" : ""}"
+              data-action="chief-policy:${category}:${resource.key}:${enabled ? "off" : "on"}"
+            >${resource.label}</button>
+          `;
+        }).join("")}
+      </div>
     </div>
   `;
 }
@@ -469,9 +489,9 @@ function renderStats() {
 
   if (state.phase === "village") {
     stats.push(
-      { label: "Baskets", value: state.baskets },
-      { label: "Houses", value: state.houses },
-      { label: "Common fund", value: state.commons }
+      { label: "Baskets free", value: state.baskets },
+      { label: "Houses free", value: state.houses },
+      { label: "Common apples", value: state.commons }
     );
   }
 
@@ -592,7 +612,7 @@ function getResolveSummary() {
     return "Every Little Georgie follows their plan, then eats if an apple is available.";
   }
 
-  return "Each specialist follows their saved plan, then the village eats from the apple supply.";
+  return "Specialists follow their saved plans; broken Georgies do only minimal work, then everyone eats if apples are available.";
 }
 
 function getRoleGeorgies(role) {
@@ -613,21 +633,53 @@ function getRolePlan(role) {
 }
 
 function getGeorgiePlan(georgie) {
-  return georgie.plan ?? state.rolePlans[georgie.role] ?? "work";
+  if (georgie.status === "broken") return getDefaultWorkPlan(georgie.role);
+  const plan = georgie.plan ?? state.rolePlans[georgie.role] ?? getDefaultWorkPlan(georgie.role);
+  if (georgie.role === "builder" && plan === "work") return "basket";
+  return plan;
 }
 
 function getPlanLabel(role, plan) {
   if (plan === "mixed") return "Mixed";
-  return plan === "work" ? ROLE_INFO[role].workLabel : ROLE_INFO[role].restLabel;
+  if (plan === "rest") return ROLE_INFO[role].restLabel;
+  if (role === "builder" && plan === "house") return ROLE_INFO.builder.houseLabel;
+  return ROLE_INFO[role].workLabel;
+}
+
+function getDefaultWorkPlan(role) {
+  return role === "builder" ? "basket" : "work";
+}
+
+function getRolePlanOptions(role) {
+  if (role === "builder") return ["basket", "house", "rest"];
+  return ["work", "rest"];
+}
+
+function getGeorgiePlanOptions(georgie) {
+  return getRolePlanOptions(georgie.role).map((plan) => ({
+    plan,
+    disabled: isGeorgiePlanDisabled(georgie, plan)
+  }));
+}
+
+function isRolePlanDisabled(role, plan) {
+  return !getRoleGeorgies(role).some((georgie) => !isGeorgiePlanDisabled(georgie, plan));
+}
+
+function isGeorgiePlanDisabled(georgie, plan) {
+  return georgie.status === "broken" && (plan === "rest" || (georgie.role === "builder" && plan === "house"));
 }
 
 function getRoleStats(role) {
   const counts = getRoleCounts(role);
+  const georgies = getRoleGeorgies(role);
   return [
     { label: "Total", value: counts.total },
     { label: "Median mood", value: statusLabel[counts.median] },
     { label: "Mood mix", value: `${counts.happy} happy / ${counts.tired} tired / ${counts.broken} broken` },
     { label: "Plan", value: getPlanLabel(role, getRolePlan(role)) },
+    { label: "Baskets held", value: georgies.filter((georgie) => georgie.hasBasket).length },
+    { label: "Housed", value: georgies.filter((georgie) => georgie.hasHouse).length },
     { label: "Output", value: getRoleProductionSummary(role) }
   ];
 }
@@ -636,30 +688,39 @@ function getPersonStats(georgie) {
   return [
     { label: "Mood", value: statusLabel[georgie.status] },
     { label: "Plan", value: getPlanLabel(georgie.role, getGeorgiePlan(georgie)) },
+    { label: "Basket", value: georgie.hasBasket ? "Held" : "None" },
+    { label: "House", value: georgie.hasHouse ? "Housed" : "None" },
     { label: "Output", value: getPersonOutput(georgie) }
   ];
 }
 
 function getPersonSummary(georgie) {
   if (georgie.role === "chief") {
-    return "Henry is the chief now: one visible person at the top, with the working groups below him.";
+    return "Henry can rest when able, or administer levies and distributions of apples, baskets, and houses.";
   }
 
-  return `${formatGeorgieName(georgie)} keeps an individual plan. Group toggles can still set every ${ROLE_INFO[georgie.role].label.toLowerCase()} at once.`;
+  if (georgie.status === "broken") {
+    return `${formatGeorgieName(georgie)} is broken and can only do minimal work until fed.`;
+  }
+
+  return `${formatGeorgieName(georgie)} keeps an individual plan. A house means waking rested after eating, and a basket only helps the farmer holding it.`;
 }
 
 function getRoleProductionSummary(role) {
   const georgies = getRoleGeorgies(role);
 
   if (role === "farmer") {
-    const apples = georgies.reduce((total, georgie) => total + getAppleYield(georgie, state.baskets), 0);
+    const apples = georgies.reduce((total, georgie) => {
+      if (getGeorgiePlan(georgie) === "rest") return total;
+      return total + getAppleYield(georgie);
+    }, 0);
     return `${apples} apples/day`;
   }
 
   if (role === "builder") {
     const output = georgies.reduce(
       (total, georgie) => {
-        const projection = getBuilderProjection(georgie.status);
+        const projection = getBuilderProjection(georgie.status, getGeorgiePlan(georgie));
         return {
           baskets: total.baskets + projection.baskets,
           houseProgress: total.houseProgress + projection.houseProgress
@@ -675,12 +736,15 @@ function getRoleProductionSummary(role) {
 }
 
 function getPersonOutput(georgie) {
+  const plan = getGeorgiePlan(georgie);
+  if (plan === "rest") return "resting";
+
   if (georgie.role === "farmer") {
-    return `${getAppleYield(georgie, state.baskets)} apples/day`;
+    return `${getAppleYield(georgie)} apples/day`;
   }
 
   if (georgie.role === "builder") {
-    const output = getBuilderProjection(georgie.status);
+    const output = getBuilderProjection(georgie.status, plan);
     return `${output.baskets} baskets/day, ${output.houseProgress} house progress/day`;
   }
 
@@ -688,16 +752,17 @@ function getPersonOutput(georgie) {
   return `${levy} levy capacity/day`;
 }
 
-function getBuilderProjection(status) {
-  if (status === "happy") {
-    return { baskets: 2, houseProgress: 2 };
+function getBuilderProjection(status, plan) {
+  if (plan === "house") {
+    if (status === "broken") return { baskets: 0, houseProgress: 0 };
+    return { baskets: 0, houseProgress: status === "happy" ? 2 : 1 };
   }
 
-  if (status === "tired") {
-    return { baskets: 1, houseProgress: 1 };
+  if (plan === "basket") {
+    return { baskets: status === "happy" ? 2 : 1, houseProgress: 0 };
   }
 
-  return { baskets: 1, houseProgress: 0 };
+  return { baskets: 0, houseProgress: 0 };
 }
 
 function formatGeorgieName(georgie) {
@@ -724,12 +789,16 @@ function getDebugState() {
     houseProgress: state.houseProgress,
     commons: state.commons,
     rolePlans: state.rolePlans,
+    chiefPolicy: state.chiefPolicy,
     georgies: state.georgies.map((georgie) => ({
       id: georgie.id,
       name: georgie.name,
       role: georgie.role,
       status: georgie.status,
       plan: georgie.plan,
+      effectivePlan: getGeorgiePlan(georgie),
+      hasBasket: georgie.hasBasket,
+      hasHouse: georgie.hasHouse,
       isNew: georgie.isNew
     })),
     log: state.log

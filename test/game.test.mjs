@@ -13,6 +13,7 @@ import {
   getRoleMoodCounts,
   getSpecialistReadiness,
   isSeasonOver,
+  setChiefPolicy,
   setPlan,
   setRolePlan
 } from "../src/game.js";
@@ -114,9 +115,10 @@ test("happy rate is based on aggregate Georgie turns", () => {
 });
 
 test("farmer yield benefits from baskets while broken farmers cannot use them", () => {
-  assert.equal(getAppleYield({ role: "farmer", status: "happy" }, 1), 5);
-  assert.equal(getAppleYield({ role: "farmer", status: "tired" }, 1), 4);
-  assert.equal(getAppleYield({ role: "farmer", status: "broken" }, 1), 1);
+  assert.equal(getAppleYield({ role: "farmer", status: "happy", hasBasket: true }, 0), 5);
+  assert.equal(getAppleYield({ role: "farmer", status: "tired", hasBasket: true }, 0), 4);
+  assert.equal(getAppleYield({ role: "farmer", status: "happy", hasBasket: false }, 10), 3);
+  assert.equal(getAppleYield({ role: "farmer", status: "broken", hasBasket: true }, 0), 1);
 });
 
 test("role plans batch update specialists while individual plans stay independent", () => {
@@ -144,6 +146,76 @@ test("role plans batch update specialists while individual plans stay independen
   const next = advanceDay(mixedFarmers);
   assert.equal(next.georgies.find((georgie) => georgie.id === 2).status, "tired");
   assert.equal(next.georgies.find((georgie) => georgie.id === 3).status, "happy");
+});
+
+test("broken Georgies are forced into minimal work instead of rest", () => {
+  const state = createInitialState();
+  state.apples = 1;
+  state.georgies[0].status = "broken";
+
+  const plannedRest = setPlan(state, 1, "rest");
+  assert.equal(plannedRest.georgies[0].plan, "work");
+
+  const next = advanceDay(plannedRest);
+  assert.equal(next.georgies[0].status, "tired");
+});
+
+test("builder plans separate basket making from house building", () => {
+  const state = createInitialState();
+  state.phase = "village";
+  state.apples = 10;
+  state.baskets = 0;
+  state.houses = 0;
+  state.houseProgress = 0;
+  state.georgies = [
+    { id: 1, name: "Henry", role: "chief", status: "happy", plan: "rest", hasBasket: false, hasHouse: false, isNew: false },
+    { id: 2, name: "Ada", role: "builder", status: "happy", plan: "basket", hasBasket: false, hasHouse: false, isNew: false },
+    { id: 3, name: "Mara", role: "builder", status: "tired", plan: "house", hasBasket: false, hasHouse: false, isNew: false },
+    { id: 4, name: "Bo", role: "builder", status: "broken", plan: "house", hasBasket: false, hasHouse: false, isNew: false }
+  ];
+
+  const next = advanceDay(state);
+  assert.equal(next.baskets, 3);
+  assert.equal(next.houseProgress, 1);
+  assert.equal(next.georgies.find((georgie) => georgie.id === 4).plan, "basket");
+});
+
+test("a house lets a fed worker wake rested after working", () => {
+  const state = createInitialState();
+  state.phase = "village";
+  state.apples = 3;
+  state.georgies = [
+    { id: 1, name: "Henry", role: "chief", status: "happy", plan: "rest", hasBasket: false, hasHouse: false, isNew: false },
+    { id: 2, name: "Ada", role: "farmer", status: "happy", plan: "work", hasBasket: false, hasHouse: true, isNew: false }
+  ];
+
+  const next = advanceDay(state);
+  assert.equal(next.georgies.find((georgie) => georgie.id === 2).status, "happy");
+});
+
+test("Chief Henry can levy and distribute baskets and houses", () => {
+  let state = createInitialState();
+  state.phase = "village";
+  state.apples = 10;
+  state.baskets = 1;
+  state.houses = 1;
+  state.georgies = [
+    { id: 1, name: "Henry", role: "chief", status: "happy", plan: "work", hasBasket: false, hasHouse: false, isNew: false },
+    { id: 2, name: "Ada", role: "farmer", status: "happy", plan: "work", hasBasket: true, hasHouse: false, isNew: false },
+    { id: 3, name: "Mara", role: "builder", status: "happy", plan: "basket", hasBasket: false, hasHouse: true, isNew: false },
+    { id: 4, name: "Nell", role: "farmer", status: "happy", plan: "work", hasBasket: false, hasHouse: false, isNew: false },
+    { id: 5, name: "Bo", role: "builder", status: "happy", plan: "basket", hasBasket: false, hasHouse: false, isNew: false }
+  ];
+  state = setChiefPolicy(state, "levy", "apples", false);
+  state = setChiefPolicy(state, "distribute", "apples", false);
+  state = setChiefPolicy(state, "levy", "baskets", true);
+  state = setChiefPolicy(state, "levy", "houses", true);
+
+  const next = advanceDay(state);
+
+  assert.equal(next.georgies.find((georgie) => georgie.id === 4).hasBasket, true);
+  assert.equal(next.georgies.filter((georgie) => georgie.hasHouse).length, 2);
+  assert.equal(next.houses, 0);
 });
 
 test("season ending reports a failure when every Georgie is broken", () => {

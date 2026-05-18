@@ -583,11 +583,20 @@ p {
   background: #ece6d2;
 }
 
+.segmented-control.option-count-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .segmented-control button {
   border: 0;
   border-radius: 6px;
   color: var(--muted);
   font-weight: 900;
+  background: transparent;
+}
+
+.segmented-control button:disabled {
+  color: rgba(111, 102, 90, 0.48);
   background: transparent;
 }
 
@@ -599,6 +608,58 @@ p {
 
 .segmented-control button:hover,
 .segmented-control button:focus-visible {
+  outline: 3px solid rgba(40, 103, 65, 0.16);
+  outline-offset: 1px;
+}
+
+.chief-policy {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f7f2df;
+}
+
+.resource-policy-row {
+  display: grid;
+  grid-template-columns: minmax(70px, auto) 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.resource-policy-row > span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.resource-toggle-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.resource-toggle {
+  min-height: 34px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 900;
+  background: #fffdf7;
+}
+
+.resource-toggle.is-active {
+  color: #fffaf0;
+  border-color: var(--leaf-dark);
+  background: var(--leaf-dark);
+}
+
+.resource-toggle:hover,
+.resource-toggle:focus-visible {
   outline: 3px solid rgba(40, 103, 65, 0.16);
   outline-offset: 1px;
 }
