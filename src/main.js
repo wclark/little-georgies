@@ -303,7 +303,7 @@ function renderRoleDetailFeature() {
           <p>${role.workSummary}</p>
           ${renderSummaryStats(getRoleStats(viewPath.role))}
           ${renderPlanControl({
-            activePlan: state.rolePlans[viewPath.role],
+            activePlan: getRolePlan(viewPath.role),
             label: `${role.plural} plan`,
             workAction: `role-plan:${viewPath.role}:work`,
             restAction: `role-plan:${viewPath.role}:rest`,
@@ -334,10 +334,10 @@ function renderPersonDetailFeature() {
           <p>${getPersonSummary(georgie)}</p>
           ${renderSummaryStats(getPersonStats(georgie))}
           ${renderPlanControl({
-            activePlan: state.rolePlans[georgie.role],
-            label: `${role.plural} plan`,
-            workAction: `role-plan:${georgie.role}:work`,
-            restAction: `role-plan:${georgie.role}:rest`,
+            activePlan: getGeorgiePlan(georgie),
+            label: `${formatGeorgieName(georgie)} plan`,
+            workAction: `plan:${georgie.id}:work`,
+            restAction: `plan:${georgie.id}:rest`,
             workLabel: role.workLabel,
             restLabel: role.restLabel
           })}
@@ -359,10 +359,10 @@ function renderChiefFocus(chief) {
         <p>${role.workSummary}</p>
         ${renderSummaryStats(getPersonStats(chief))}
         ${renderPlanControl({
-          activePlan: state.rolePlans.chief,
+          activePlan: getGeorgiePlan(chief),
           label: "Chief Henry plan",
-          workAction: "role-plan:chief:work",
-          restAction: "role-plan:chief:rest",
+          workAction: `plan:${chief.id}:work`,
+          restAction: `plan:${chief.id}:rest`,
           workLabel: role.workLabel,
           restLabel: role.restLabel
         })}
@@ -375,24 +375,46 @@ function renderRoleTile(counts) {
   const role = ROLE_INFO[counts.role];
 
   return `
-    <button class="nav-tile ${counts.median} ${counts.role}" type="button" data-action="view:role:${counts.role}">
-      <img src="${getRoleImage(counts.role, counts.median, "avatar")}" alt="">
-      <span>${role.plural}</span>
-      <strong>${counts.total} total</strong>
-      <small>${counts.happy} happy / ${counts.tired} tired / ${counts.broken} broken</small>
-      <small>${getRoleProductionSummary(counts.role)}</small>
-    </button>
+    <article class="nav-tile ${counts.median} ${counts.role}">
+      <button class="tile-open" type="button" data-action="view:role:${counts.role}">
+        <img src="${getRoleImage(counts.role, counts.median, "avatar")}" alt="">
+        <span>${role.plural}</span>
+        <strong>${counts.total} total</strong>
+        <small>${counts.happy} happy / ${counts.tired} tired / ${counts.broken} broken</small>
+        <small>${getRoleProductionSummary(counts.role)}</small>
+      </button>
+      ${renderPlanControl({
+        activePlan: getRolePlan(counts.role),
+        label: `${role.plural} plan`,
+        workAction: `role-plan:${counts.role}:work`,
+        restAction: `role-plan:${counts.role}:rest`,
+        workLabel: role.workLabel,
+        restLabel: role.restLabel
+      })}
+    </article>
   `;
 }
 
 function renderPersonTile(georgie) {
+  const role = ROLE_INFO[georgie.role];
+
   return `
-    <button class="nav-tile ${georgie.status} ${georgie.role}" type="button" data-action="view:person:${georgie.role}:${georgie.id}">
-      <img src="${getRoleImage(georgie.role, georgie.status, "avatar")}" alt="">
-      <span>${ROLE_INFO[georgie.role].label}</span>
-      <strong>${formatGeorgieName(georgie)}</strong>
-      <small>${statusLabel[georgie.status]} - ${getPersonOutput(georgie)}</small>
-    </button>
+    <article class="nav-tile ${georgie.status} ${georgie.role}">
+      <button class="tile-open" type="button" data-action="view:person:${georgie.role}:${georgie.id}">
+        <img src="${getRoleImage(georgie.role, georgie.status, "avatar")}" alt="">
+        <span>${role.label}</span>
+        <strong>${formatGeorgieName(georgie)}</strong>
+        <small>${statusLabel[georgie.status]} - ${getPersonOutput(georgie)}</small>
+      </button>
+      ${renderPlanControl({
+        activePlan: getGeorgiePlan(georgie),
+        label: `${formatGeorgieName(georgie)} plan`,
+        workAction: `plan:${georgie.id}:work`,
+        restAction: `plan:${georgie.id}:rest`,
+        workLabel: role.workLabel,
+        restLabel: role.restLabel
+      })}
+    </article>
   `;
 }
 
@@ -570,7 +592,7 @@ function getResolveSummary() {
     return "Every Little Georgie follows their plan, then eats if an apple is available.";
   }
 
-  return "Each specialist group follows its plan, then the village eats from the apple supply.";
+  return "Each specialist follows their saved plan, then the village eats from the apple supply.";
 }
 
 function getRoleGeorgies(role) {
@@ -581,13 +603,31 @@ function getRoleCounts(role) {
   return getRoleMoodCounts(state).find((counts) => counts.role === role);
 }
 
+function getRolePlan(role) {
+  const plans = new Set(getRoleGeorgies(role).map((georgie) => getGeorgiePlan(georgie)));
+  if (plans.size === 1) {
+    return [...plans][0];
+  }
+
+  return "mixed";
+}
+
+function getGeorgiePlan(georgie) {
+  return georgie.plan ?? state.rolePlans[georgie.role] ?? "work";
+}
+
+function getPlanLabel(role, plan) {
+  if (plan === "mixed") return "Mixed";
+  return plan === "work" ? ROLE_INFO[role].workLabel : ROLE_INFO[role].restLabel;
+}
+
 function getRoleStats(role) {
   const counts = getRoleCounts(role);
   return [
     { label: "Total", value: counts.total },
     { label: "Median mood", value: statusLabel[counts.median] },
     { label: "Mood mix", value: `${counts.happy} happy / ${counts.tired} tired / ${counts.broken} broken` },
-    { label: "Plan", value: state.rolePlans[role] === "work" ? ROLE_INFO[role].workLabel : ROLE_INFO[role].restLabel },
+    { label: "Plan", value: getPlanLabel(role, getRolePlan(role)) },
     { label: "Output", value: getRoleProductionSummary(role) }
   ];
 }
@@ -595,7 +635,7 @@ function getRoleStats(role) {
 function getPersonStats(georgie) {
   return [
     { label: "Mood", value: statusLabel[georgie.status] },
-    { label: "Group plan", value: state.rolePlans[georgie.role] === "work" ? ROLE_INFO[georgie.role].workLabel : ROLE_INFO[georgie.role].restLabel },
+    { label: "Plan", value: getPlanLabel(georgie.role, getGeorgiePlan(georgie)) },
     { label: "Output", value: getPersonOutput(georgie) }
   ];
 }
@@ -605,7 +645,7 @@ function getPersonSummary(georgie) {
     return "Henry is the chief now: one visible person at the top, with the working groups below him.";
   }
 
-  return `${formatGeorgieName(georgie)} is one member of the ${ROLE_INFO[georgie.role].plural}. The group plan applies to each individual here.`;
+  return `${formatGeorgieName(georgie)} keeps an individual plan. Group toggles can still set every ${ROLE_INFO[georgie.role].label.toLowerCase()} at once.`;
 }
 
 function getRoleProductionSummary(role) {

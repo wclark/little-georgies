@@ -13,7 +13,8 @@ import {
   getRoleMoodCounts,
   getSpecialistReadiness,
   isSeasonOver,
-  setPlan
+  setPlan,
+  setRolePlan
 } from "../src/game.js";
 
 test("initial state starts in the one-Georgie solo stage with only apples", () => {
@@ -116,6 +117,33 @@ test("farmer yield benefits from baskets while broken farmers cannot use them", 
   assert.equal(getAppleYield({ role: "farmer", status: "happy" }, 1), 5);
   assert.equal(getAppleYield({ role: "farmer", status: "tired" }, 1), 4);
   assert.equal(getAppleYield({ role: "farmer", status: "broken" }, 1), 1);
+});
+
+test("role plans batch update specialists while individual plans stay independent", () => {
+  const state = createInitialState();
+  state.phase = "village";
+  state.apples = 20;
+  state.baskets = 1;
+  state.georgies = [
+    { id: 1, name: "Henry", role: "chief", status: "happy", plan: "work", isNew: false },
+    { id: 2, name: "Ada", role: "farmer", status: "happy", plan: "work", isNew: false },
+    { id: 3, name: "Mara", role: "farmer", status: "happy", plan: "work", isNew: false },
+    { id: 4, name: "Bo", role: "builder", status: "happy", plan: "work", isNew: false }
+  ];
+
+  const restedFarmers = setRolePlan(state, "farmer", "rest");
+  assert.deepEqual(restedFarmers.georgies.filter((georgie) => georgie.role === "farmer").map((georgie) => georgie.plan), [
+    "rest",
+    "rest"
+  ]);
+
+  const mixedFarmers = setPlan(restedFarmers, 2, "work");
+  assert.equal(mixedFarmers.georgies.find((georgie) => georgie.id === 2).plan, "work");
+  assert.equal(mixedFarmers.georgies.find((georgie) => georgie.id === 3).plan, "rest");
+
+  const next = advanceDay(mixedFarmers);
+  assert.equal(next.georgies.find((georgie) => georgie.id === 2).status, "tired");
+  assert.equal(next.georgies.find((georgie) => georgie.id === 3).status, "happy");
 });
 
 test("season ending reports a failure when every Georgie is broken", () => {

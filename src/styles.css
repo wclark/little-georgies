@@ -414,7 +414,7 @@ p {
 }
 
 .focus-copy span,
-.nav-tile span {
+.tile-open span {
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 850;
@@ -472,19 +472,32 @@ p {
 
 .nav-tile {
   display: grid;
-  grid-template-columns: 72px 1fr;
-  gap: 10px;
-  align-items: center;
-  min-height: 112px;
+  gap: 8px;
+  align-content: start;
+  min-height: 154px;
   padding: 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--ink);
-  text-align: left;
   background: #fffdf7;
 }
 
-.nav-tile img {
+.tile-open {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  min-height: 82px;
+  padding: 4px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--ink);
+  text-align: left;
+  background: transparent;
+}
+
+.tile-open img {
   grid-row: span 4;
   width: 72px;
   height: 72px;
@@ -494,18 +507,26 @@ p {
   background: #e9ecd4;
 }
 
-.nav-tile strong {
+.tile-open strong {
   font-size: 1.08rem;
   line-height: 1.1;
 }
 
-.nav-tile small {
+.tile-open small {
   color: var(--muted);
   line-height: 1.3;
 }
 
-.nav-tile:hover,
-.nav-tile:focus-visible,
+.nav-tile .segmented-control {
+  min-height: 36px;
+}
+
+.nav-tile .segmented-control button {
+  min-width: 0;
+}
+
+.tile-open:hover,
+.tile-open:focus-visible,
 .breadcrumb-row button:hover,
 .breadcrumb-row button:focus-visible {
   border-color: var(--leaf);

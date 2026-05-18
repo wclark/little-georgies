@@ -125,6 +125,11 @@ export function setRolePlan(state, role, plan) {
 
   const next = cloneState(state);
   next.rolePlans[role] = plan;
+  for (const georgie of next.georgies) {
+    if (georgie.role === role) {
+      georgie.plan = plan;
+    }
+  }
   return next;
 }
 
@@ -355,11 +360,7 @@ export function getAppleYield(georgie, baskets) {
 }
 
 function getPlanForGeorgie(state, georgie) {
-  if (state.phase === "village" && georgie.role !== "little") {
-    return state.rolePlans[georgie.role] ?? "work";
-  }
-
-  return georgie.plan;
+  return georgie.plan ?? state.rolePlans[georgie.role] ?? "work";
 }
 
 function getBuilderOutput(status) {
