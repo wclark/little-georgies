@@ -34,7 +34,7 @@
         <header class="topbar">
           <a class="home-link" href="https://georgist.org/">Georgist.org</a>
           <div>
-            <p class="eyebrow">Day <span data-bind="day">1</span> of <span data-bind="maxDay">28</span></p>
+            <p class="eyebrow">Day <span data-bind="day">1</span></p>
             <h1>Little Georgies</h1>
           </div>
           <button class="icon-button" type="button" data-action="reset" aria-label="Restart season">
@@ -44,10 +44,7 @@
 
         <main class="play-layout">
           <section class="orchard-panel" aria-labelledby="orchard-title">
-            <div class="orchard-scene">
-              <img src="./assets/images/splash-orchard.png" alt="">
-              <div class="tree-shade" aria-hidden="true"></div>
-            </div>
+            <div class="stage-feature" data-role="feature"></div>
             <div class="orchard-copy">
               <p class="eyebrow" data-bind="phase">Little band</p>
               <h2 id="orchard-title" data-bind="eventTitle">A fresh morning</h2>
@@ -71,7 +68,7 @@
 
             <div class="status-strip" data-role="condition-strip" aria-label="Condition counts"></div>
 
-            <section class="georgie-list" aria-labelledby="georgies-title">
+            <section class="georgie-list" data-role="georgie-list" aria-labelledby="georgies-title">
               <h2 id="georgies-title">The Georgies</h2>
               <div class="georgie-grid" data-role="georgies"></div>
             </section>
@@ -79,6 +76,11 @@
             <section class="log" aria-labelledby="log-title">
               <h2 id="log-title">Ledger</h2>
               <ol data-role="log"></ol>
+            </section>
+
+            <section class="debug-panel" data-role="debug-panel" aria-labelledby="debug-title" hidden>
+              <h2 id="debug-title">Debug</h2>
+              <pre data-role="debug-output"></pre>
             </section>
           </aside>
         </main>

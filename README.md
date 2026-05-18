@@ -2,13 +2,13 @@
 
 Little Georgies is a dependency-free HTML/CSS/JS game for `georgist.org/little-georgies/`.
 
-The player starts with one happy Little Georgie and guides the settlement through a short season. Each day, every Georgie can work or rest. Workers gather, lead, farm, or build first; then each Georgie eats an apple if the pantry has one. A fed worker becomes tired, a fed rester becomes happy, and an unfed Georgie becomes broken.
+The player starts with one happy Little Georgie and guides the settlement for as many days as it can survive. Each day, every Georgie can work or rest. Workers gather, lead, farm, or build first; then each Georgie eats an apple if the pantry has one. A fed worker becomes tired, a fed rester becomes happy, and an unfed Georgie becomes broken.
 
 The display evolves with the rules:
 
-- Solo stage: one Little Georgie, tutorial copy, and only the current apple count.
+- Solo stage: one large mood image, tutorial copy, one work/rest choice, and only the current apple count.
 - Named band stage: the first Georgie becomes Henry, new Little Georgies are named from a small name set, and growth depends on happy-turn percentage plus aggregate apples gathered.
-- Specialist village stage: named individuals become anonymous Chief, Farmer, and Builder groups tracked by role and mood counts. Baskets, houses, and the common fund appear only here.
+- Specialist village stage: named individuals become anonymous Chief, Farmer, and Builder groups. The three specialist cards replace the single-character focus, while baskets, houses, and the common fund appear only here.
 
 The Chief can levy and redistribute apples, the Farmer gathers more with baskets, and the Builder makes baskets and houses.
 
@@ -19,6 +19,8 @@ npm run dev
 ```
 
 Then open `http://localhost:5173`.
+
+Add `?debug` to the URL, such as `http://localhost:5173/?debug`, to show the current phase, thresholds, rates, resources, plans, and Georgie state in the side ledger.
 
 If `npm` is not on PATH, the scripts can be run directly with Node:
 
@@ -55,4 +57,4 @@ Configure these repository settings before running the manual deploy workflow:
 
 ## Source Art
 
-The included splash and character images are cropped from the reference images supplied for this project. `assets/images/little-georgie-reference.png` is kept in the repo as source reference for future edits, but it is excluded from the deployed build.
+The included splash and character images are cropped from the reference images supplied for this project. The solo-stage scene images are full mood crops from `assets/images/little-georgie-reference.png`, which is kept in the repo as source reference for future edits but excluded from the deployed build.

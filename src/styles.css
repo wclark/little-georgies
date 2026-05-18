@@ -224,24 +224,162 @@ p {
   overflow: hidden;
 }
 
-.orchard-scene {
-  position: relative;
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
-  background: #dfe9c7;
+.stage-feature {
+  padding: 16px;
+  background:
+    linear-gradient(180deg, rgba(223, 233, 199, 0.7), rgba(255, 253, 245, 0.4)),
+    #eef4dc;
 }
 
-.orchard-scene img {
+.solo-card,
+.person-card,
+.specialist-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fffdf7;
+}
+
+.solo-card {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(280px, 0.94fr);
+  gap: 18px;
+  align-items: stretch;
+  padding: 12px;
+}
+
+.solo-image-wrap {
+  display: grid;
+  min-height: 430px;
+  overflow: hidden;
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.65), transparent 260px),
+    #dfe9c7;
+  place-items: center;
+}
+
+.solo-image-wrap img {
   width: 100%;
   height: 100%;
+  max-height: 620px;
   object-fit: cover;
+  object-position: center;
 }
 
-.tree-shade {
-  position: absolute;
-  inset: auto 0 0;
-  height: 36%;
-  background: linear-gradient(180deg, rgba(36, 29, 23, 0), rgba(36, 29, 23, 0.28));
+.solo-card-copy {
+  display: grid;
+  gap: 14px;
+  padding: 10px;
+}
+
+.solo-card-copy h3 {
+  margin: 0;
+  font-size: 2.15rem;
+  line-height: 1;
+}
+
+.solo-card-copy p {
+  margin: 0;
+}
+
+.mood-badge {
+  justify-self: start;
+  padding: 7px 11px;
+  border-radius: 999px;
+  color: #fffaf0;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  background: var(--leaf);
+}
+
+.mood-badge.tired {
+  background: var(--gold);
+}
+
+.mood-badge.broken {
+  background: var(--apple);
+}
+
+.tutorial-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  color: var(--muted);
+  list-style: none;
+}
+
+.tutorial-list li {
+  padding: 10px 12px;
+  border-left: 4px solid var(--gold);
+  border-radius: 6px;
+  background: #f7f2df;
+}
+
+.band-grid,
+.specialist-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.band-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.specialist-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.person-card,
+.specialist-card {
+  display: grid;
+  grid-template-rows: minmax(160px, 220px) 1fr auto;
+  gap: 12px;
+  min-height: 360px;
+  padding: 10px;
+}
+
+.person-card img,
+.specialist-card img {
+  width: 100%;
+  height: 100%;
+  min-height: 160px;
+  border-radius: 6px;
+  object-fit: cover;
+  object-position: center top;
+  background: #e9ecd4;
+}
+
+.person-copy,
+.specialist-copy {
+  display: grid;
+  gap: 5px;
+}
+
+.person-copy span,
+.specialist-copy span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.person-copy strong,
+.specialist-copy strong {
+  font-size: 1.18rem;
+}
+
+.person-copy small,
+.specialist-copy small,
+.specialist-copy p {
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.specialist-copy p {
+  margin: 0;
 }
 
 .orchard-copy {
@@ -254,48 +392,11 @@ p {
 
 .action-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 12px;
-  padding: 20px 22px 22px;
+  padding: 12px 22px 22px;
 }
 
-.planner-card {
-  display: grid;
-  grid-template-rows: minmax(160px, 220px) auto auto;
-  gap: 12px;
-  min-height: 358px;
-  padding: 10px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  color: var(--ink);
-  background: #fffdf7;
-}
-
-.planner-card > img {
-  width: 100%;
-  height: 100%;
-  min-height: 160px;
-  border-radius: 6px;
-  object-fit: cover;
-  object-position: center top;
-  background: #e9ecd4;
-}
-
-.planner-card.little > img {
-  width: 112px;
-  height: 112px;
-  min-height: 112px;
-  align-self: center;
-  justify-self: center;
-  border: 4px solid #89ba28;
-  border-radius: 50%;
-}
-
-.planner-card:hover {
-  border-color: var(--leaf);
-}
-
-.planner-card span,
 .stat span,
 .meter-label span,
 .georgie-card span {
@@ -304,21 +405,6 @@ p {
   font-weight: 850;
   letter-spacing: 0;
   text-transform: uppercase;
-}
-
-.planner-copy {
-  display: grid;
-  gap: 4px;
-}
-
-.planner-card strong {
-  font-size: 1.18rem;
-}
-
-.planner-card small {
-  color: var(--muted);
-  font-size: 0.92rem;
-  line-height: 1.35;
 }
 
 .segmented-control {
@@ -520,6 +606,26 @@ p {
   line-height: 1.35;
 }
 
+.debug-panel h2 {
+  margin-block-end: 10px;
+  font-size: 1.08rem;
+}
+
+.debug-panel pre {
+  max-height: 280px;
+  margin: 0;
+  padding: 12px;
+  overflow: auto;
+  border: 1px solid rgba(98, 122, 56, 0.28);
+  border-radius: 8px;
+  color: #123121;
+  background: #edf5e2;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
 .ending {
   grid-template-columns: minmax(320px, 720px);
   align-content: center;
@@ -565,6 +671,15 @@ p {
   .play-layout {
     grid-template-columns: 1fr;
   }
+
+  .solo-card,
+  .specialist-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .solo-image-wrap {
+    min-height: 320px;
+  }
 }
 
 @media (max-width: 620px) {
@@ -584,8 +699,17 @@ p {
   .action-grid,
   .stat-grid,
   .georgie-grid,
-  .status-strip {
+  .status-strip,
+  .band-grid {
     grid-template-columns: 1fr;
+  }
+
+  .stage-feature {
+    padding: 10px;
+  }
+
+  .solo-card-copy h3 {
+    font-size: 1.75rem;
   }
 
   .splash-copy,

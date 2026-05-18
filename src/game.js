@@ -1,4 +1,3 @@
-export const MAX_DAY = 32;
 export const GROWTH_HAPPY_RATE_TARGET = 0.5;
 export const SPECIALIST_HAPPY_RATE_TARGET = 0.5;
 export const SPECIALIST_APPLE_TARGET = 30;
@@ -269,7 +268,7 @@ export function getRoleMoodCounts(state) {
 }
 
 export function isSeasonOver(state) {
-  return state.day > MAX_DAY || countStatus(state, "broken") >= state.georgies.length;
+  return countStatus(state, "broken") >= state.georgies.length;
 }
 
 export function getEnding(state) {

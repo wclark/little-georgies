@@ -117,3 +117,11 @@ test("season ending reports a failure when every Georgie is broken", () => {
   assert.equal(isSeasonOver(state), true);
   assert.equal(getEnding(state).title, "The pantry went quiet");
 });
+
+test("the season does not end just because many days have passed", () => {
+  const state = createInitialState();
+  state.day = 500;
+  state.apples = 10;
+
+  assert.equal(isSeasonOver(state), false);
+});
