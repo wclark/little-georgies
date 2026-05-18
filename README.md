@@ -44,15 +44,14 @@ The GitHub Actions workflow validates every push. Manual deployment syncs only t
 
 ```powershell
 npm run build
-aws s3 sync dist/little-georgies/ s3://YOUR_BUCKET/little-georgies/ --delete
-aws s3 cp dist/index.html s3://YOUR_BUCKET/index.html
+aws s3 sync dist/little-georgies/ s3://georgist.org/little-georgies/ --delete --region us-west-1
+aws s3 cp dist/index.html s3://georgist.org/index.html --region us-west-1
 ```
 
-Configure these repository settings before running the manual deploy workflow:
+Then invalidate CloudFront distribution `E1QMD3NCCUN9RC` for `/`, `/index.html`, and `/little-georgies/*`.
 
-- `vars.AWS_REGION`
-- `vars.S3_BUCKET`
-- optional `vars.CLOUDFRONT_DISTRIBUTION_ID`
+Configure this repository setting before running the manual deploy workflow:
+
 - `secrets.AWS_ROLE_TO_ASSUME`
 
 ## Source Art

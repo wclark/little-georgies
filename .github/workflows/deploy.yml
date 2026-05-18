@@ -53,14 +53,13 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ vars.AWS_REGION }}
+          aws-region: us-west-1
 
       - name: Sync Little Georgies path
-        run: aws s3 sync dist/little-georgies/ "s3://${{ vars.S3_BUCKET }}/little-georgies/" --delete
+        run: aws s3 sync dist/little-georgies/ "s3://georgist.org/little-georgies/" --delete
 
       - name: Upload top-level link page
-        run: aws s3 cp dist/index.html "s3://${{ vars.S3_BUCKET }}/index.html"
+        run: aws s3 cp dist/index.html "s3://georgist.org/index.html"
 
       - name: Invalidate CloudFront
-        if: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID != '' }}
-        run: aws cloudfront create-invalidation --distribution-id "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" --paths "/" "/index.html" "/little-georgies/*"
+        run: aws cloudfront create-invalidation --distribution-id "E1QMD3NCCUN9RC" --paths "/" "/index.html" "/little-georgies/*"
