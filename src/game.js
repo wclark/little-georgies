@@ -5,6 +5,14 @@ export const SPECIALIST_POPULATION_TARGET = 5;
 
 export const LITTLE_NAMES = ["Ada", "Mara", "Nell", "Bo", "Ira", "Tuck", "Lio", "Fern", "Sol", "June"];
 
+const STATUS_SCORE = {
+  broken: 0,
+  tired: 1,
+  happy: 2
+};
+
+const STATUS_BY_SCORE = ["broken", "tired", "happy"];
+
 export const ROLE_INFO = {
   little: {
     label: "Little Georgie",
@@ -262,9 +270,25 @@ export function getRoleMoodCounts(state) {
       total: roleGeorgies.length,
       happy: roleGeorgies.filter((georgie) => georgie.status === "happy").length,
       tired: roleGeorgies.filter((georgie) => georgie.status === "tired").length,
-      broken: roleGeorgies.filter((georgie) => georgie.status === "broken").length
+      broken: roleGeorgies.filter((georgie) => georgie.status === "broken").length,
+      median: getMedianStatus(roleGeorgies)
     };
   });
+}
+
+export function getMedianStatus(georgies) {
+  if (georgies.length === 0) return "broken";
+
+  const scores = georgies
+    .map((georgie) => STATUS_SCORE[georgie.status])
+    .filter((score) => Number.isInteger(score))
+    .sort((a, b) => a - b);
+
+  if (scores.length === 0) return "broken";
+
+  const middle = Math.floor(scores.length / 2);
+  const median = scores.length % 2 === 1 ? scores[middle] : Math.round((scores[middle - 1] + scores[middle]) / 2);
+  return STATUS_BY_SCORE[median];
 }
 
 export function isSeasonOver(state) {
@@ -419,38 +443,40 @@ function maybeEnterSpecialistPhase(state, notes) {
   if (getGrowthHappyRate(state) < SPECIALIST_HAPPY_RATE_TARGET) return;
   if (state.georgies.length < SPECIALIST_POPULATION_TARGET) return;
 
-  const population = state.georgies.length;
-  const specialists = [];
-  specialists.push(...createAnonymousGeorgies("chief", 1, state.nextId));
-  specialists.push(...createAnonymousGeorgies("farmer", Math.max(1, Math.ceil((population - 1) * 0.6)), state.nextId + specialists.length));
-  specialists.push(
-    ...createAnonymousGeorgies(
-      "builder",
-      Math.max(1, population - specialists.length),
-      state.nextId + specialists.length
-    )
-  );
-
   state.phase = "village";
   state.baskets = 1;
   state.houses = 1;
   state.commons = 2;
-  state.georgies = specialists;
-  state.nextId += specialists.length;
+  state.georgies = createSpecialistGeorgies(state.georgies);
   state.growthHappyTurns = 0;
   state.growthMoodTurns = 0;
-  notes.push("The named Little Georgies organized into anonymous Chief, Farmer, and Builder groups.");
+  notes.push("Henry became chief while the others organized into Farmer and Builder Georgies.");
 }
 
-function createAnonymousGeorgies(role, count, startingId) {
-  return Array.from({ length: count }, (_, index) => ({
-    id: startingId + index,
-    name: ROLE_INFO[role].label,
+function createSpecialistGeorgies(georgies) {
+  const [chiefSource, ...workers] = georgies;
+  const farmerCount = Math.max(1, Math.ceil(workers.length * 0.6));
+  const farmers = workers.slice(0, farmerCount);
+  const builders = workers.slice(farmerCount);
+  const balancedFarmers = builders.length === 0 && farmers.length > 1 ? farmers.slice(0, -1) : farmers;
+  const balancedBuilders = builders.length === 0 && farmers.length > 1 ? farmers.slice(-1) : builders;
+
+  return [
+    createSpecialistGeorgie(chiefSource, "chief", "Henry"),
+    ...balancedFarmers.map((georgie) => createSpecialistGeorgie(georgie, "farmer")),
+    ...balancedBuilders.map((georgie) => createSpecialistGeorgie(georgie, "builder"))
+  ];
+}
+
+function createSpecialistGeorgie(source, role, fallbackName = ROLE_INFO[role].label) {
+  return {
+    id: source.id,
+    name: source.name === "Little Georgie" ? fallbackName : source.name,
     role,
-    status: "happy",
+    status: source.status,
     plan: "work",
     isNew: true
-  }));
+  };
 }
 
 function pickLittleName(state) {

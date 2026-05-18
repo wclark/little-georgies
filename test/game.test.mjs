@@ -9,6 +9,7 @@ import {
   getAppleYield,
   getEnding,
   getHappyRate,
+  getMedianStatus,
   getRoleMoodCounts,
   getSpecialistReadiness,
   isSeasonOver,
@@ -90,10 +91,17 @@ test("enough aggregate apples, happy rate, and population unlock anonymous speci
 
   assert.equal(next.phase, "village");
   assert.equal(countRole(next, "chief"), 1);
+  assert.equal(next.georgies.find((georgie) => georgie.role === "chief").name, "Henry");
   assert.ok(countRole(next, "farmer") >= 1);
   assert.ok(countRole(next, "builder") >= 1);
   assert.equal(counts.reduce((total, entry) => total + entry.total, 0), 5);
   assert.equal(getSpecialistReadiness(next), 100);
+});
+
+test("median status summarizes mixed groups for category images", () => {
+  assert.equal(getMedianStatus([{ status: "broken" }, { status: "happy" }]), "tired");
+  assert.equal(getMedianStatus([{ status: "broken" }, { status: "tired" }, { status: "happy" }]), "tired");
+  assert.equal(getMedianStatus([{ status: "happy" }, { status: "happy" }, { status: "tired" }]), "happy");
 });
 
 test("happy rate is based on aggregate Georgie turns", () => {

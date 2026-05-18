@@ -47,7 +47,7 @@ for (const asset of [
   }
 }
 
-if (!main.includes("${georgie.role}-${georgie.status}${suffix}.png")) {
+if (!main.includes("${role}-${status}${suffix}.png")) {
   throw new Error("The app must dynamically reference specialist role art");
 }
 

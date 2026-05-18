@@ -8,9 +8,9 @@ The display evolves with the rules:
 
 - Solo stage: one large mood image, tutorial copy, one work/rest choice, and only the current apple count.
 - Named band stage: the first Georgie becomes Henry, new Little Georgies are named from a small name set, and growth depends on happy-turn percentage plus aggregate apples gathered.
-- Specialist village stage: named individuals become anonymous Chief, Farmer, and Builder groups. The three specialist cards replace the single-character focus, while baskets, houses, and the common fund appear only here.
+- Specialist village stage: Henry becomes Chief Henry in the main focus slot, with Farmer Georgies and Builder Georgies as clickable group tiles. Group views summarize aggregate mood and production, and individual tiles drill down to each Georgie's details.
 
-The Chief can levy and redistribute apples, the Farmer gathers more with baskets, and the Builder makes baskets and houses.
+The Chief can levy and redistribute apples, the Farmer gathers more with baskets, and the Builder makes baskets and houses. Group images use the median mood of the Georgies inside that group.
 
 ## Local Development
 

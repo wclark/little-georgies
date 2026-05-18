@@ -3,6 +3,7 @@ import {
   advanceDay,
   countStatus,
   createInitialState,
+  getAppleYield,
   getEnding,
   getGrowthHappyRate,
   getGrowthReadiness,
@@ -24,6 +25,7 @@ const statusLabel = {
 const debugMode = new URLSearchParams(window.location.search).has("debug");
 
 let state = createInitialState();
+let viewPath = { level: "root" };
 
 const screens = [...document.querySelectorAll("[data-screen]")];
 const bindings = [...document.querySelectorAll("[data-bind]")].reduce((map, element) => {
@@ -54,6 +56,7 @@ document.addEventListener("click", (event) => {
 
   const action = target.dataset.action;
   if (action === "start") {
+    viewPath = { level: "root" };
     showScreen("game");
     render();
     return;
@@ -61,14 +64,31 @@ document.addEventListener("click", (event) => {
 
   if (action === "reset") {
     state = createInitialState();
+    viewPath = { level: "root" };
     showScreen("splash");
     render();
     return;
   }
 
   if (action === "end-day") {
+    const previousPhase = state.phase;
     state = advanceDay(state);
+    if (previousPhase !== state.phase) {
+      viewPath = { level: "root" };
+    }
+    syncViewPath();
     finishOrRender();
+    if (previousPhase !== state.phase) {
+      scrollGameToTop();
+    }
+    return;
+  }
+
+  if (action.startsWith("view:")) {
+    viewPath = getNavigationPath(action);
+    syncViewPath();
+    render();
+    scrollGameToTop();
     return;
   }
 
@@ -87,6 +107,43 @@ document.addEventListener("click", (event) => {
 });
 
 render();
+
+function getNavigationPath(action) {
+  const [, level, role, id] = action.split(":");
+
+  if (level === "role") {
+    return { level: "role", role };
+  }
+
+  if (level === "person") {
+    return { level: "person", role, id: Number(id) };
+  }
+
+  return { level: "root" };
+}
+
+function syncViewPath() {
+  if (state.phase !== "village") {
+    viewPath = { level: "root" };
+    return;
+  }
+
+  if (viewPath.level === "role" && getRoleGeorgies(viewPath.role).length === 0) {
+    viewPath = { level: "root" };
+    return;
+  }
+
+  if (viewPath.level === "person") {
+    const georgie = state.georgies.find((candidate) => candidate.id === viewPath.id && candidate.role === viewPath.role);
+    if (!georgie) {
+      viewPath = getRoleGeorgies(viewPath.role).length > 0 ? { level: "role", role: viewPath.role } : { level: "root" };
+    }
+  }
+}
+
+function scrollGameToTop() {
+  window.scrollTo({ top: 0, left: 0 });
+}
 
 function showScreen(name) {
   for (const screen of screens) {
@@ -201,32 +258,162 @@ function renderBandFeature() {
 }
 
 function renderVillageFeature() {
+  if (viewPath.level === "person") {
+    renderPersonDetailFeature();
+    return;
+  }
+
+  if (viewPath.level === "role") {
+    renderRoleDetailFeature();
+    return;
+  }
+
+  renderVillageRootFeature();
+}
+
+function renderVillageRootFeature() {
+  const chief = getRoleGeorgies("chief")[0];
+  const farmerCounts = getRoleCounts("farmer");
+  const builderCounts = getRoleCounts("builder");
+
   featureEl.innerHTML = `
-    <div class="specialist-grid">
-      ${getRoleMoodCounts(state).map((counts) => {
-        const role = ROLE_INFO[counts.role];
-        const representative = getRepresentativeStatus(counts);
-        return `
-          <article class="specialist-card ${representative} ${counts.role}">
-            <img src="./assets/images/${counts.role}-${representative}.png" alt="${representative} ${role.plural}">
-            <div class="specialist-copy">
-              <span>${role.plural}</span>
-              <strong>${counts.total} total</strong>
-              <small>${counts.happy} happy / ${counts.tired} tired / ${counts.broken} broken</small>
-              <p>${role.workSummary}</p>
-            </div>
-            ${renderPlanControl({
-              activePlan: state.rolePlans[counts.role],
-              label: `${role.plural} plan`,
-              workAction: `role-plan:${counts.role}:work`,
-              restAction: `role-plan:${counts.role}:rest`,
-              workLabel: role.workLabel,
-              restLabel: role.restLabel
-            })}
-          </article>
-        `;
-      }).join("")}
+    <div class="hierarchy-view">
+      ${renderChiefFocus(chief)}
+      <div class="tile-grid village-tile-grid" aria-label="Village groups">
+        ${renderRoleTile(farmerCounts)}
+        ${renderRoleTile(builderCounts)}
+      </div>
     </div>
+  `;
+}
+
+function renderRoleDetailFeature() {
+  const counts = getRoleCounts(viewPath.role);
+  const georgies = getRoleGeorgies(viewPath.role);
+  const role = ROLE_INFO[viewPath.role];
+
+  featureEl.innerHTML = `
+    <div class="hierarchy-view">
+      ${renderBreadcrumb(`view:root`, "Village")}
+      <article class="focus-panel ${counts.median} ${viewPath.role}">
+        <img src="${getRoleImage(viewPath.role, counts.median)}" alt="${counts.median} ${role.plural}">
+        <div class="focus-copy">
+          <span>${role.plural}</span>
+          <h3>${role.plural}</h3>
+          <p>${role.workSummary}</p>
+          ${renderSummaryStats(getRoleStats(viewPath.role))}
+          ${renderPlanControl({
+            activePlan: state.rolePlans[viewPath.role],
+            label: `${role.plural} plan`,
+            workAction: `role-plan:${viewPath.role}:work`,
+            restAction: `role-plan:${viewPath.role}:rest`,
+            workLabel: role.workLabel,
+            restLabel: role.restLabel
+          })}
+        </div>
+      </article>
+      <div class="tile-grid individual-tile-grid" aria-label="${role.plural}">
+        ${georgies.map((georgie) => renderPersonTile(georgie)).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderPersonDetailFeature() {
+  const georgie = state.georgies.find((candidate) => candidate.id === viewPath.id);
+  const role = ROLE_INFO[georgie.role];
+
+  featureEl.innerHTML = `
+    <div class="hierarchy-view">
+      ${renderBreadcrumb(`view:role:${georgie.role}`, role.plural)}
+      <article class="focus-panel ${georgie.status} ${georgie.role}">
+        <img src="${getRoleImage(georgie.role, georgie.status)}" alt="${statusLabel[georgie.status]} ${formatGeorgieName(georgie)}">
+        <div class="focus-copy">
+          <span>${role.label}</span>
+          <h3>${formatGeorgieName(georgie)}</h3>
+          <p>${getPersonSummary(georgie)}</p>
+          ${renderSummaryStats(getPersonStats(georgie))}
+          ${renderPlanControl({
+            activePlan: state.rolePlans[georgie.role],
+            label: `${role.plural} plan`,
+            workAction: `role-plan:${georgie.role}:work`,
+            restAction: `role-plan:${georgie.role}:rest`,
+            workLabel: role.workLabel,
+            restLabel: role.restLabel
+          })}
+        </div>
+      </article>
+    </div>
+  `;
+}
+
+function renderChiefFocus(chief) {
+  const role = ROLE_INFO.chief;
+
+  return `
+    <article class="focus-panel ${chief.status} chief">
+      <img src="${getRoleImage("chief", chief.status)}" alt="${statusLabel[chief.status]} Chief Henry">
+      <div class="focus-copy">
+        <span>${role.label}</span>
+        <h3>Chief Henry</h3>
+        <p>${role.workSummary}</p>
+        ${renderSummaryStats(getPersonStats(chief))}
+        ${renderPlanControl({
+          activePlan: state.rolePlans.chief,
+          label: "Chief Henry plan",
+          workAction: "role-plan:chief:work",
+          restAction: "role-plan:chief:rest",
+          workLabel: role.workLabel,
+          restLabel: role.restLabel
+        })}
+      </div>
+    </article>
+  `;
+}
+
+function renderRoleTile(counts) {
+  const role = ROLE_INFO[counts.role];
+
+  return `
+    <button class="nav-tile ${counts.median} ${counts.role}" type="button" data-action="view:role:${counts.role}">
+      <img src="${getRoleImage(counts.role, counts.median, "avatar")}" alt="">
+      <span>${role.plural}</span>
+      <strong>${counts.total} total</strong>
+      <small>${counts.happy} happy / ${counts.tired} tired / ${counts.broken} broken</small>
+      <small>${getRoleProductionSummary(counts.role)}</small>
+    </button>
+  `;
+}
+
+function renderPersonTile(georgie) {
+  return `
+    <button class="nav-tile ${georgie.status} ${georgie.role}" type="button" data-action="view:person:${georgie.role}:${georgie.id}">
+      <img src="${getRoleImage(georgie.role, georgie.status, "avatar")}" alt="">
+      <span>${ROLE_INFO[georgie.role].label}</span>
+      <strong>${formatGeorgieName(georgie)}</strong>
+      <small>${statusLabel[georgie.status]} - ${getPersonOutput(georgie)}</small>
+    </button>
+  `;
+}
+
+function renderBreadcrumb(action, label) {
+  return `
+    <div class="breadcrumb-row">
+      <button type="button" data-action="${action}">Up to ${label}</button>
+    </div>
+  `;
+}
+
+function renderSummaryStats(stats) {
+  return `
+    <dl class="summary-stats">
+      ${stats.map((stat) => `
+        <div>
+          <dt>${stat.label}</dt>
+          <dd>${stat.value}</dd>
+        </div>
+      `).join("")}
+    </dl>
   `;
 }
 
@@ -386,9 +573,103 @@ function getResolveSummary() {
   return "Each specialist group follows its plan, then the village eats from the apple supply.";
 }
 
+function getRoleGeorgies(role) {
+  return state.georgies.filter((georgie) => georgie.role === role).sort((a, b) => a.id - b.id);
+}
+
+function getRoleCounts(role) {
+  return getRoleMoodCounts(state).find((counts) => counts.role === role);
+}
+
+function getRoleStats(role) {
+  const counts = getRoleCounts(role);
+  return [
+    { label: "Total", value: counts.total },
+    { label: "Median mood", value: statusLabel[counts.median] },
+    { label: "Mood mix", value: `${counts.happy} happy / ${counts.tired} tired / ${counts.broken} broken` },
+    { label: "Plan", value: state.rolePlans[role] === "work" ? ROLE_INFO[role].workLabel : ROLE_INFO[role].restLabel },
+    { label: "Output", value: getRoleProductionSummary(role) }
+  ];
+}
+
+function getPersonStats(georgie) {
+  return [
+    { label: "Mood", value: statusLabel[georgie.status] },
+    { label: "Group plan", value: state.rolePlans[georgie.role] === "work" ? ROLE_INFO[georgie.role].workLabel : ROLE_INFO[georgie.role].restLabel },
+    { label: "Output", value: getPersonOutput(georgie) }
+  ];
+}
+
+function getPersonSummary(georgie) {
+  if (georgie.role === "chief") {
+    return "Henry is the chief now: one visible person at the top, with the working groups below him.";
+  }
+
+  return `${formatGeorgieName(georgie)} is one member of the ${ROLE_INFO[georgie.role].plural}. The group plan applies to each individual here.`;
+}
+
+function getRoleProductionSummary(role) {
+  const georgies = getRoleGeorgies(role);
+
+  if (role === "farmer") {
+    const apples = georgies.reduce((total, georgie) => total + getAppleYield(georgie, state.baskets), 0);
+    return `${apples} apples/day`;
+  }
+
+  if (role === "builder") {
+    const output = georgies.reduce(
+      (total, georgie) => {
+        const projection = getBuilderProjection(georgie.status);
+        return {
+          baskets: total.baskets + projection.baskets,
+          houseProgress: total.houseProgress + projection.houseProgress
+        };
+      },
+      { baskets: 0, houseProgress: 0 }
+    );
+    return `${output.baskets} baskets/day, ${output.houseProgress} house progress/day`;
+  }
+
+  const levy = georgies.reduce((total, georgie) => total + (georgie.status === "happy" ? 2 : georgie.status === "tired" ? 1 : 0), 0);
+  return `${levy} levy capacity/day`;
+}
+
+function getPersonOutput(georgie) {
+  if (georgie.role === "farmer") {
+    return `${getAppleYield(georgie, state.baskets)} apples/day`;
+  }
+
+  if (georgie.role === "builder") {
+    const output = getBuilderProjection(georgie.status);
+    return `${output.baskets} baskets/day, ${output.houseProgress} house progress/day`;
+  }
+
+  const levy = georgie.status === "happy" ? 2 : georgie.status === "tired" ? 1 : 0;
+  return `${levy} levy capacity/day`;
+}
+
+function getBuilderProjection(status) {
+  if (status === "happy") {
+    return { baskets: 2, houseProgress: 2 };
+  }
+
+  if (status === "tired") {
+    return { baskets: 1, houseProgress: 1 };
+  }
+
+  return { baskets: 1, houseProgress: 0 };
+}
+
+function formatGeorgieName(georgie) {
+  if (georgie.role === "chief") return `Chief ${georgie.name}`;
+  if (georgie.role === "little") return georgie.name;
+  return `${ROLE_INFO[georgie.role].label.replace(" Georgie", "")} ${georgie.name}`;
+}
+
 function getDebugState() {
   return {
     url: `${window.location.pathname}${window.location.search}`,
+    viewPath,
     phase: state.phase,
     day: state.day,
     apples: state.apples,
@@ -428,12 +709,10 @@ function getGeorgieImage(georgie, mode) {
     return `./assets/images/georgie-${georgie.status}.png`;
   }
 
-  const suffix = mode === "avatar" ? "-avatar" : "";
-  return `./assets/images/${georgie.role}-${georgie.status}${suffix}.png`;
+  return getRoleImage(georgie.role, georgie.status, mode);
 }
 
-function getRepresentativeStatus(counts) {
-  if (counts.happy > 0) return "happy";
-  if (counts.tired > 0) return "tired";
-  return "broken";
+function getRoleImage(role, status, mode = "scene") {
+  const suffix = mode === "avatar" ? "-avatar" : "";
+  return `./assets/images/${role}-${status}${suffix}.png`;
 }
