@@ -4,7 +4,13 @@ Little Georgies is a dependency-free HTML/CSS/JS game for `georgist.org/little-g
 
 The player starts with one happy Little Georgie and guides the settlement through a short season. Each day, every Georgie can work or rest. Workers gather, lead, farm, or build first; then each Georgie eats an apple if the pantry has one. A fed worker becomes tired, a fed rester becomes happy, and an unfed Georgie becomes broken.
 
-If the early band saves enough apples, accumulates enough happy days, and grows to enough people, the game enters a specialist phase with one Chief Georgie, one Farmer Georgie, and one Builder Georgie. The Chief can levy and redistribute apples, the Farmer gathers more with baskets, and the Builder makes baskets and houses.
+The display evolves with the rules:
+
+- Solo stage: one Little Georgie, tutorial copy, and only the current apple count.
+- Named band stage: the first Georgie becomes Henry, new Little Georgies are named from a small name set, and growth depends on happy-turn percentage plus aggregate apples gathered.
+- Specialist village stage: named individuals become anonymous Chief, Farmer, and Builder groups tracked by role and mood counts. Baskets, houses, and the common fund appear only here.
+
+The Chief can levy and redistribute apples, the Farmer gathers more with baskets, and the Builder makes baskets and houses.
 
 ## Local Development
 

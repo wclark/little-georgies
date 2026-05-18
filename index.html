@@ -23,8 +23,8 @@
           <p class="eyebrow">Georgist.org presents</p>
           <h1 id="splash-title">Little Georgies</h1>
           <p>
-            Start with one happy gatherer. Choose work or rest, save enough apples,
-            and grow into a village of Chief, Farmer, and Builder Georgies.
+            Start with one happy gatherer. Learn work, rest, and apples first,
+            then grow into named Little Georgies and finally a specialist village.
           </p>
           <button class="primary-button" type="button" data-action="start">Start season</button>
         </div>
@@ -59,46 +59,17 @@
           </section>
 
           <aside class="ledger" aria-label="Settlement status">
-            <div class="stat-grid" aria-live="polite">
-              <div class="stat">
-                <span>Apples</span>
-                <strong data-bind="apples">0</strong>
-              </div>
-              <div class="stat">
-                <span>Georgies</span>
-                <strong data-bind="population">1</strong>
-              </div>
-              <div class="stat">
-                <span>Baskets</span>
-                <strong data-bind="baskets">0</strong>
-              </div>
-              <div class="stat">
-                <span>Houses</span>
-                <strong data-bind="houses">0</strong>
-              </div>
-              <div class="stat">
-                <span>Common fund</span>
-                <strong data-bind="commons">0</strong>
-              </div>
-              <div class="stat">
-                <span>Harmony</span>
-                <strong data-bind="harmony">0.0</strong>
-              </div>
-            </div>
+            <div class="stat-grid" data-role="stats" aria-live="polite"></div>
 
-            <div class="meter-block">
+            <div class="meter-block" data-role="progress-panel">
               <div class="meter-label">
-                <span>Specialist readiness</span>
-                <strong><span data-bind="readiness">0</span>%</strong>
+                <span data-role="progress-label">Growth readiness</span>
+                <strong><span data-role="progress-value">0</span>%</strong>
               </div>
-              <div class="meter" aria-hidden="true"><span data-bind-style="readiness"></span></div>
+              <div class="meter" aria-hidden="true"><span data-role="progress-meter"></span></div>
             </div>
 
-            <div class="status-strip" aria-label="Condition counts">
-              <span><strong data-bind="happyCount">1</strong> happy</span>
-              <span><strong data-bind="tiredCount">0</strong> tired</span>
-              <span><strong data-bind="brokenCount">0</strong> broken</span>
-            </div>
+            <div class="status-strip" data-role="condition-strip" aria-label="Condition counts"></div>
 
             <section class="georgie-list" aria-labelledby="georgies-title">
               <h2 id="georgies-title">The Georgies</h2>

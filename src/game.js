@@ -1,11 +1,15 @@
-export const MAX_DAY = 28;
-export const SPECIALIST_APPLE_TARGET = 7;
-export const SPECIALIST_HARMONY_TARGET = 4;
-export const SPECIALIST_POPULATION_TARGET = 3;
+export const MAX_DAY = 32;
+export const GROWTH_HAPPY_RATE_TARGET = 0.5;
+export const SPECIALIST_HAPPY_RATE_TARGET = 0.5;
+export const SPECIALIST_APPLE_TARGET = 30;
+export const SPECIALIST_POPULATION_TARGET = 5;
+
+export const LITTLE_NAMES = ["Ada", "Mara", "Nell", "Bo", "Ira", "Tuck", "Lio", "Fern", "Sol", "June"];
 
 export const ROLE_INFO = {
   little: {
     label: "Little Georgie",
+    plural: "Little Georgies",
     workLabel: "Gather apples",
     restLabel: "Rest",
     workSummary: "Collects apples from the orchard.",
@@ -13,6 +17,7 @@ export const ROLE_INFO = {
   },
   chief: {
     label: "Chief Georgie",
+    plural: "Chief Georgies",
     workLabel: "Lead sharing",
     restLabel: "Rest",
     workSummary: "Levy taxes and redistribute apples before dinner.",
@@ -20,6 +25,7 @@ export const ROLE_INFO = {
   },
   farmer: {
     label: "Farmer Georgie",
+    plural: "Farmer Georgies",
     workLabel: "Harvest",
     restLabel: "Rest",
     workSummary: "Gather apples. Baskets increase a fed farmer's yield.",
@@ -27,6 +33,7 @@ export const ROLE_INFO = {
   },
   builder: {
     label: "Builder Georgie",
+    plural: "Builder Georgies",
     workLabel: "Build",
     restLabel: "Rest",
     workSummary: "Make baskets and add progress toward houses.",
@@ -34,41 +41,51 @@ export const ROLE_INFO = {
   }
 };
 
-const NAMES = ["Pip", "Mara", "Nell", "Bo", "Ira", "Tuck", "Lio", "Fern"];
+const GROWTH_TARGETS = [0, 4, 10, 18, 26];
 const HOUSE_PROGRESS_TARGET = 10;
 
 export function createInitialState() {
   return {
-    phase: "little",
+    phase: "solo",
     day: 1,
     apples: 0,
+    totalApples: 0,
+    happyTurns: 0,
+    moodTurns: 0,
+    growthHappyTurns: 0,
+    growthMoodTurns: 0,
     baskets: 0,
     houses: 0,
     houseProgress: 0,
     commons: 0,
-    harmony: 0,
     nextId: 2,
+    rolePlans: {
+      chief: "work",
+      farmer: "work",
+      builder: "work"
+    },
     lastEvent: {
-      title: "One happy Little Georgie",
-      body: "Pip has an empty pantry, a bright morning, and one choice: work or rest."
+      title: "One Little Georgie",
+      body: "Choose work to gather apples or rest to recover. After the choice, the pantry decides tomorrow's mood."
     },
     georgies: [
       {
         id: 1,
-        name: "Pip",
+        name: "Little Georgie",
         role: "little",
         status: "happy",
         plan: "work",
         isNew: true
       }
     ],
-    log: ["Pip arrives happy and ready to gather."]
+    log: ["One happy Little Georgie arrives at the orchard."]
   };
 }
 
 export function cloneState(state) {
   return {
     ...state,
+    rolePlans: { ...state.rolePlans },
     lastEvent: { ...state.lastEvent },
     georgies: state.georgies.map((georgie) => ({ ...georgie })),
     log: [...state.log]
@@ -90,9 +107,22 @@ export function setPlan(state, georgieId, plan) {
   return next;
 }
 
+export function setRolePlan(state, role, plan) {
+  if (!["chief", "farmer", "builder"].includes(role)) {
+    throw new Error(`Unknown role: ${role}`);
+  }
+
+  if (!["work", "rest"].includes(plan)) {
+    throw new Error(`Unknown plan: ${plan}`);
+  }
+
+  const next = cloneState(state);
+  next.rolePlans[role] = plan;
+  return next;
+}
+
 export function advanceDay(state) {
   const next = cloneState(state);
-  const startedWithApples = next.apples;
   const notes = [];
   let gathered = 0;
   let basketsMade = 0;
@@ -100,7 +130,8 @@ export function advanceDay(state) {
   let chiefWorked = false;
 
   for (const georgie of next.georgies) {
-    if (georgie.plan !== "work") continue;
+    const plan = getPlanForGeorgie(next, georgie);
+    if (plan !== "work") continue;
 
     if (georgie.role === "chief") {
       chiefWorked = true;
@@ -118,41 +149,37 @@ export function advanceDay(state) {
   }
 
   next.apples += gathered;
-  next.baskets += basketsMade;
-  next.houseProgress += houseProgressMade;
+  next.totalApples += gathered;
 
-  while (next.houseProgress >= HOUSE_PROGRESS_TARGET) {
-    next.houseProgress -= HOUSE_PROGRESS_TARGET;
-    next.houses += 1;
-    notes.push("A new house was finished.");
-  }
+  if (next.phase === "village") {
+    next.baskets += basketsMade;
+    next.houseProgress += houseProgressMade;
 
-  if (chiefWorked) {
-    applyChiefWork(next, notes);
+    while (next.houseProgress >= HOUSE_PROGRESS_TARGET) {
+      next.houseProgress -= HOUSE_PROGRESS_TARGET;
+      next.houses += 1;
+      notes.push("A new house was finished.");
+    }
+
+    if (chiefWorked) {
+      applyChiefWork(next, notes);
+    }
   }
 
   const food = feedAndUpdateStatuses(next);
   const happyCount = countStatus(next, "happy");
-  const harmonyGain = happyCount / next.georgies.length;
-  next.harmony = roundTenths(next.harmony + harmonyGain);
+  next.happyTurns += happyCount;
+  next.moodTurns += next.georgies.length;
+  next.growthHappyTurns += happyCount;
+  next.growthMoodTurns += next.georgies.length;
 
-  if (next.phase === "little") {
+  if (next.phase !== "village") {
+    maybeGrowLittlePopulation(next, notes);
     maybeEnterSpecialistPhase(next, notes);
-    if (next.phase === "little") {
-      maybeGrowLittlePopulation(next, notes);
-      maybeEnterSpecialistPhase(next, notes);
-    }
   }
 
   next.day += 1;
-  next.lastEvent = getNextEvent(next, {
-    gathered,
-    basketsMade,
-    houseProgressMade,
-    ate: food.ate,
-    hungry: food.hungry,
-    startedWithApples
-  });
+  next.lastEvent = getNextEvent(next, { gathered, basketsMade, houseProgressMade, food });
   next.log = [
     summarizeDay(next, { gathered, basketsMade, houseProgressMade, food, chiefWorked }),
     ...notes,
@@ -161,7 +188,9 @@ export function advanceDay(state) {
 
   for (const georgie of next.georgies) {
     georgie.isNew = false;
-    georgie.plan = "work";
+    if (georgie.role === "little") {
+      georgie.plan = "work";
+    }
   }
 
   return next;
@@ -175,13 +204,38 @@ export function countRole(state, role) {
   return state.georgies.filter((georgie) => georgie.role === role).length;
 }
 
-export function getReadiness(state) {
+export function getHappyRate(state) {
+  if (state.moodTurns === 0) return 1;
+  return state.happyTurns / state.moodTurns;
+}
+
+export function getGrowthHappyRate(state) {
+  if (state.growthMoodTurns === 0) return 1;
+  return state.growthHappyTurns / state.growthMoodTurns;
+}
+
+export function getNextGrowthTarget(state) {
+  if (state.phase === "village") return null;
+  if (state.georgies.length >= SPECIALIST_POPULATION_TARGET) return SPECIALIST_APPLE_TARGET;
+  return GROWTH_TARGETS[state.georgies.length] ?? SPECIALIST_APPLE_TARGET;
+}
+
+export function getGrowthReadiness(state) {
   if (state.phase === "village") return 100;
 
-  const apples = Math.min(1, state.apples / SPECIALIST_APPLE_TARGET);
-  const harmony = Math.min(1, state.harmony / SPECIALIST_HARMONY_TARGET);
+  const target = getNextGrowthTarget(state) ?? SPECIALIST_APPLE_TARGET;
+  const apples = Math.min(1, state.totalApples / target);
+  const happyRate = Math.min(1, getGrowthHappyRate(state) / GROWTH_HAPPY_RATE_TARGET);
+  return Math.round((apples * 0.55 + happyRate * 0.45) * 100);
+}
+
+export function getSpecialistReadiness(state) {
+  if (state.phase === "village") return 100;
+
+  const apples = Math.min(1, state.totalApples / SPECIALIST_APPLE_TARGET);
+  const happyRate = Math.min(1, getGrowthHappyRate(state) / SPECIALIST_HAPPY_RATE_TARGET);
   const population = Math.min(1, state.georgies.length / SPECIALIST_POPULATION_TARGET);
-  return Math.round((apples * 0.35 + harmony * 0.35 + population * 0.3) * 100);
+  return Math.round((apples * 0.36 + happyRate * 0.34 + population * 0.3) * 100);
 }
 
 export function getScore(state) {
@@ -193,12 +247,25 @@ export function getScore(state) {
     happy * 14 +
       tired * 7 +
       state.apples * 2 +
-      state.harmony * 5 +
+      Math.round(getHappyRate(state) * 35) +
       state.baskets * 4 +
       state.houses * 8 +
       state.commons * 2 -
       broken * 12
   );
+}
+
+export function getRoleMoodCounts(state) {
+  return ["chief", "farmer", "builder"].map((role) => {
+    const roleGeorgies = state.georgies.filter((georgie) => georgie.role === role);
+    return {
+      role,
+      total: roleGeorgies.length,
+      happy: roleGeorgies.filter((georgie) => georgie.status === "happy").length,
+      tired: roleGeorgies.filter((georgie) => georgie.status === "tired").length,
+      broken: roleGeorgies.filter((georgie) => georgie.status === "broken").length
+    };
+  });
 }
 
 export function isSeasonOver(state) {
@@ -245,8 +312,8 @@ export function getEnding(state) {
 
   return {
     kicker: "Season complete",
-    title: "Still just Little Georgies",
-    body: "The first band survived, but did not save enough apples and happy days to organize the specialist village.",
+    title: state.phase === "solo" ? "Still one Little Georgie" : "Still Little Georgies",
+    body: "The orchard survived, but did not build enough happy turns and aggregate apples to organize the specialist village.",
     score,
     happy,
     broken
@@ -264,6 +331,14 @@ export function getAppleYield(georgie, baskets) {
   return 2;
 }
 
+function getPlanForGeorgie(state, georgie) {
+  if (state.phase === "village" && georgie.role !== "little") {
+    return state.rolePlans[georgie.role] ?? "work";
+  }
+
+  return georgie.plan;
+}
+
 function getBuilderOutput(status) {
   if (status === "happy") {
     return { baskets: 2, houseProgress: 2 };
@@ -277,10 +352,9 @@ function getBuilderOutput(status) {
 }
 
 function applyChiefWork(state, notes) {
-  const chief = state.georgies.find((georgie) => georgie.role === "chief");
-  if (!chief) return;
-
-  const levyLimit = chief.status === "happy" ? 2 : chief.status === "tired" ? 1 : 0;
+  const chiefHappy = state.georgies.filter((georgie) => georgie.role === "chief" && georgie.status === "happy").length;
+  const chiefTired = state.georgies.filter((georgie) => georgie.role === "chief" && georgie.status === "tired").length;
+  const levyLimit = chiefHappy * 2 + chiefTired;
   const levied = Math.min(levyLimit, state.apples);
   state.apples -= levied;
   state.commons += levied;
@@ -291,7 +365,7 @@ function applyChiefWork(state, notes) {
   state.apples += redistributed;
 
   if (levied > 0 || redistributed > 0) {
-    notes.push(`Chief Georgie levied ${levied} and redistributed ${redistributed} apples.`);
+    notes.push(`Chief Georgies levied ${levied} and redistributed ${redistributed} apples.`);
   }
 }
 
@@ -300,10 +374,11 @@ function feedAndUpdateStatuses(state) {
   let hungry = 0;
 
   for (const georgie of state.georgies) {
+    const plan = getPlanForGeorgie(state, georgie);
     if (state.apples > 0) {
       state.apples -= 1;
       ate += 1;
-      georgie.status = georgie.plan === "rest" ? "happy" : "tired";
+      georgie.status = plan === "rest" ? "happy" : "tired";
     } else {
       hungry += 1;
       georgie.status = "broken";
@@ -314,14 +389,17 @@ function feedAndUpdateStatuses(state) {
 }
 
 function maybeGrowLittlePopulation(state, notes) {
-  if (state.georgies.length >= 5) return;
+  if (state.georgies.length >= SPECIALIST_POPULATION_TARGET) return;
   if (countStatus(state, "broken") > 0) return;
+  if (getGrowthHappyRate(state) < GROWTH_HAPPY_RATE_TARGET) return;
+  if (state.totalApples < getNextGrowthTarget(state)) return;
 
-  const growthCost = 3 + state.georgies.length;
-  if (state.apples < growthCost) return;
+  if (state.phase === "solo") {
+    state.phase = "band";
+    state.georgies[0].name = "Henry";
+  }
 
-  const name = NAMES[(state.nextId - 1) % NAMES.length];
-  state.apples -= growthCost;
+  const name = pickLittleName(state);
   state.georgies.push({
     id: state.nextId,
     name,
@@ -331,59 +409,97 @@ function maybeGrowLittlePopulation(state, notes) {
     isNew: true
   });
   state.nextId += 1;
+  state.growthHappyTurns = 0;
+  state.growthMoodTurns = 0;
   notes.push(`${name} joined as a happy Little Georgie.`);
 }
 
 function maybeEnterSpecialistPhase(state, notes) {
-  if (state.apples < SPECIALIST_APPLE_TARGET) return;
-  if (state.harmony < SPECIALIST_HARMONY_TARGET) return;
+  if (state.phase === "solo") return;
+  if (state.totalApples < SPECIALIST_APPLE_TARGET) return;
+  if (getGrowthHappyRate(state) < SPECIALIST_HAPPY_RATE_TARGET) return;
   if (state.georgies.length < SPECIALIST_POPULATION_TARGET) return;
 
+  const population = state.georgies.length;
+  const specialists = [];
+  specialists.push(...createAnonymousGeorgies("chief", 1, state.nextId));
+  specialists.push(...createAnonymousGeorgies("farmer", Math.max(1, Math.ceil((population - 1) * 0.6)), state.nextId + specialists.length));
+  specialists.push(
+    ...createAnonymousGeorgies(
+      "builder",
+      Math.max(1, population - specialists.length),
+      state.nextId + specialists.length
+    )
+  );
+
   state.phase = "village";
-  state.baskets = Math.max(1, state.baskets);
-  state.houses = Math.max(1, state.houses);
-  state.commons += 2;
-  state.georgies = [
-    { id: state.nextId, name: "Chief", role: "chief", status: "happy", plan: "work", isNew: true },
-    { id: state.nextId + 1, name: "Farmer", role: "farmer", status: "happy", plan: "work", isNew: true },
-    { id: state.nextId + 2, name: "Builder", role: "builder", status: "happy", plan: "work", isNew: true }
-  ];
-  state.nextId += 3;
-  notes.push("The Little Georgies organized into Chief, Farmer, and Builder Georgies.");
+  state.baskets = 1;
+  state.houses = 1;
+  state.commons = 2;
+  state.georgies = specialists;
+  state.nextId += specialists.length;
+  state.growthHappyTurns = 0;
+  state.growthMoodTurns = 0;
+  notes.push("The named Little Georgies organized into anonymous Chief, Farmer, and Builder groups.");
+}
+
+function createAnonymousGeorgies(role, count, startingId) {
+  return Array.from({ length: count }, (_, index) => ({
+    id: startingId + index,
+    name: ROLE_INFO[role].label,
+    role,
+    status: "happy",
+    plan: "work",
+    isNew: true
+  }));
+}
+
+function pickLittleName(state) {
+  const used = new Set(state.georgies.map((georgie) => georgie.name.toLowerCase()));
+  const pool = LITTLE_NAMES.filter((name) => !used.has(name.toLowerCase()));
+  if (pool.length === 0) return `Georgie ${state.nextId}`;
+  return pool[Math.floor(Math.random() * pool.length)];
 }
 
 function getNextEvent(state, result) {
   if (state.phase === "village") {
     return {
-      title: "The specialist village",
-      body: "Chief, Farmer, and Builder Georgies now need coordinated work, rest, food, baskets, and houses."
+      title: "Anonymous specialists",
+      body: "The village now tracks Chief, Farmer, and Builder Georgies by role and mood counts."
     };
   }
 
-  if (result.hungry > 0) {
+  if (state.phase === "solo") {
+    return {
+      title: "One Little Georgie",
+      body: "Work gathers apples. Rest can make a fed Little Georgie happy again."
+    };
+  }
+
+  if (result.food.hungry > 0) {
     return {
       title: "An empty pantry",
-      body: "A Georgie who cannot eat an apple becomes broken on the next morning."
+      body: "Any Little Georgie who cannot eat an apple becomes broken on the next morning."
     };
   }
 
   if (state.georgies.some((georgie) => georgie.isNew)) {
     return {
-      title: "A new happy face",
-      body: "Saved apples made room for another Little Georgie to join the orchard."
+      title: "The band grows",
+      body: "A happy-turn rate and aggregate apple harvest brought another named Little Georgie."
     };
   }
 
-  if (getReadiness(state) >= 75) {
+  if (getSpecialistReadiness(state) >= 75) {
     return {
       title: "Almost a village",
-      body: "Enough happy days and saved apples will invite Chief, Farmer, and Builder Georgies."
+      body: "Enough named Little Georgies, happy turns, and aggregate apples will unlock the three specialist groups."
     };
   }
 
   return {
-    title: "Work, rest, eat",
-    body: "A working Georgie who eats becomes tired. A resting Georgie who eats becomes happy."
+    title: "Named Little Georgies",
+    body: "Keep the band fed and happy while the aggregate apple harvest grows."
   };
 }
 
@@ -391,14 +507,10 @@ function summarizeDay(state, result) {
   const pieces = [];
 
   if (result.gathered > 0) pieces.push(`gathered ${result.gathered} apples`);
-  if (result.basketsMade > 0) pieces.push(`made ${result.basketsMade} baskets`);
-  if (result.houseProgressMade > 0) pieces.push(`built ${result.houseProgressMade} house progress`);
-  if (result.chiefWorked) pieces.push("shared under Chief Georgie's watch");
+  if (state.phase === "village" && result.basketsMade > 0) pieces.push(`made ${result.basketsMade} baskets`);
+  if (state.phase === "village" && result.houseProgressMade > 0) pieces.push(`built ${result.houseProgressMade} house progress`);
+  if (state.phase === "village" && result.chiefWorked) pieces.push("shared under Chief Georgies");
   if (pieces.length === 0) pieces.push("rested");
 
   return `Day ${state.day - 1}: ${pieces.join(", ")}. ${result.food.ate} ate, ${result.food.hungry} went hungry.`;
-}
-
-function roundTenths(value) {
-  return Math.round(value * 10) / 10;
 }
