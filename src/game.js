@@ -1,134 +1,68 @@
-export const MAX_DAY = 18;
+export const MAX_DAY = 28;
+export const SPECIALIST_APPLE_TARGET = 7;
+export const SPECIALIST_HARMONY_TARGET = 4;
+export const SPECIALIST_POPULATION_TARGET = 3;
 
-export const ACTIONS = [
-  {
-    id: "share",
-    title: "Share the crop",
-    label: "Feed and rest",
-    cost: { apples: 4 },
-    summary: "Spend apples to restore the most exhausted Georgies.",
-    apply(state) {
-      const next = cloneState(state);
-      next.apples -= 4;
-      improveGeorgies(next, 2);
-      next.log.unshift("The harvest was shared before anyone could hoard it.");
-      return next;
-    },
-    canUse(state) {
-      return state.apples >= 4 && state.georgies.some((georgie) => georgie.status !== "happy");
-    }
+export const ROLE_INFO = {
+  little: {
+    label: "Little Georgie",
+    workLabel: "Gather apples",
+    restLabel: "Rest",
+    workSummary: "Collects apples from the orchard.",
+    restSummary: "Does not gather, but can become happy after eating."
   },
-  {
-    id: "rent",
-    title: "Capture land rent",
-    label: "Fund the commons",
-    cost: {},
-    summary: "Move site rent into the common fund and lower tomorrow's drain.",
-    apply(state) {
-      const next = cloneState(state);
-      const captured = 3 + next.orchards;
-      next.commons += captured;
-      next.rentDrain = Math.max(1, next.rentDrain - 1);
-      next.log.unshift(`Collected ${captured} rent for the common fund.`);
-      return next;
-    },
-    canUse() {
-      return true;
-    }
+  chief: {
+    label: "Chief Georgie",
+    workLabel: "Lead sharing",
+    restLabel: "Rest",
+    workSummary: "Levy taxes and redistribute apples before dinner.",
+    restSummary: "Recover enough to keep the village together."
   },
-  {
-    id: "orchard",
-    title: "Plant commons",
-    label: "Grow an orchard",
-    cost: { commons: 6 },
-    summary: "Invest the fund in another shared apple grove.",
-    apply(state) {
-      const next = cloneState(state);
-      next.commons -= 6;
-      next.orchards += 1;
-      next.log.unshift("A new common orchard took root.");
-      return next;
-    },
-    canUse(state) {
-      return state.commons >= 6;
-    }
+  farmer: {
+    label: "Farmer Georgie",
+    workLabel: "Harvest",
+    restLabel: "Rest",
+    workSummary: "Gather apples. Baskets increase a fed farmer's yield.",
+    restSummary: "Recover after eating from the pantry."
   },
-  {
-    id: "push",
-    title: "Push the harvest",
-    label: "Work harder",
-    cost: {},
-    summary: "Gain apples now, but exhaustion spreads through the crew.",
-    apply(state) {
-      const next = cloneState(state);
-      next.apples += 5;
-      degradeGeorgies(next, 2);
-      next.log.unshift("The Georgies worked late into the dusk.");
-      return next;
-    },
-    canUse() {
-      return true;
-    }
+  builder: {
+    label: "Builder Georgie",
+    workLabel: "Build",
+    restLabel: "Rest",
+    workSummary: "Make baskets and add progress toward houses.",
+    restSummary: "Recover after eating from the pantry."
   }
-];
+};
 
-export const EVENT_DECK = [
-  {
-    title: "Apples after rain",
-    body: "Soft rain fattened the fruit. The happy gatherers hum under the leaves.",
-    apples: 3,
-    commons: 0,
-    fatigue: 0
-  },
-  {
-    title: "A landlord's notice",
-    body: "Someone claims the best trees and asks for rent before breakfast.",
-    apples: 0,
-    commons: 0,
-    rentDrain: 1,
-    fatigue: 1
-  },
-  {
-    title: "A neighbor brings tools",
-    body: "A borrowed cart makes the day's gathering easier.",
-    apples: 2,
-    commons: 1,
-    fatigue: 0
-  },
-  {
-    title: "Dry ground",
-    body: "The old orchard gives less today, and tired feet drag in the dust.",
-    apples: -1,
-    commons: 0,
-    fatigue: 1
-  },
-  {
-    title: "Commons meeting",
-    body: "The Georgies agree that the land's value belongs to everyone.",
-    apples: 0,
-    commons: 3,
-    rentDrain: -1,
-    fatigue: 0
-  }
-];
+const NAMES = ["Pip", "Mara", "Nell", "Bo", "Ira", "Tuck", "Lio", "Fern"];
+const HOUSE_PROGRESS_TARGET = 10;
 
 export function createInitialState() {
   return {
+    phase: "little",
     day: 1,
-    apples: 9,
-    commons: 4,
-    orchards: 2,
-    rentDrain: 3,
-    lastEvent: EVENT_DECK[0],
+    apples: 0,
+    baskets: 0,
+    houses: 0,
+    houseProgress: 0,
+    commons: 0,
+    harmony: 0,
+    nextId: 2,
+    lastEvent: {
+      title: "One happy Little Georgie",
+      body: "Pip has an empty pantry, a bright morning, and one choice: work or rest."
+    },
     georgies: [
-      { id: 1, name: "Pip", status: "happy" },
-      { id: 2, name: "Mara", status: "happy" },
-      { id: 3, name: "Nell", status: "happy" },
-      { id: 4, name: "Bo", status: "tired" },
-      { id: 5, name: "Ira", status: "tired" },
-      { id: 6, name: "Tuck", status: "happy" }
+      {
+        id: 1,
+        name: "Pip",
+        role: "little",
+        status: "happy",
+        plan: "work",
+        isNew: true
+      }
     ],
-    log: ["The Little Georgies enter the orchard."]
+    log: ["Pip arrives happy and ready to gather."]
   };
 }
 
@@ -141,70 +75,130 @@ export function cloneState(state) {
   };
 }
 
-export function getScore(state) {
-  const happy = countStatus(state, "happy");
-  const tired = countStatus(state, "tired");
-  const broken = countStatus(state, "broken");
-  return Math.max(0, happy * 12 + tired * 6 + state.commons * 2 + state.orchards * 5 - broken * 10 - state.rentDrain * 3);
+export function setPlan(state, georgieId, plan) {
+  if (!["work", "rest"].includes(plan)) {
+    throw new Error(`Unknown plan: ${plan}`);
+  }
+
+  const next = cloneState(state);
+  const georgie = next.georgies.find((candidate) => candidate.id === georgieId);
+  if (!georgie) {
+    throw new Error(`Unknown Georgie: ${georgieId}`);
+  }
+
+  georgie.plan = plan;
+  return next;
+}
+
+export function advanceDay(state) {
+  const next = cloneState(state);
+  const startedWithApples = next.apples;
+  const notes = [];
+  let gathered = 0;
+  let basketsMade = 0;
+  let houseProgressMade = 0;
+  let chiefWorked = false;
+
+  for (const georgie of next.georgies) {
+    if (georgie.plan !== "work") continue;
+
+    if (georgie.role === "chief") {
+      chiefWorked = true;
+      continue;
+    }
+
+    if (georgie.role === "builder") {
+      const output = getBuilderOutput(georgie.status);
+      basketsMade += output.baskets;
+      houseProgressMade += output.houseProgress;
+      continue;
+    }
+
+    gathered += getAppleYield(georgie, next.baskets);
+  }
+
+  next.apples += gathered;
+  next.baskets += basketsMade;
+  next.houseProgress += houseProgressMade;
+
+  while (next.houseProgress >= HOUSE_PROGRESS_TARGET) {
+    next.houseProgress -= HOUSE_PROGRESS_TARGET;
+    next.houses += 1;
+    notes.push("A new house was finished.");
+  }
+
+  if (chiefWorked) {
+    applyChiefWork(next, notes);
+  }
+
+  const food = feedAndUpdateStatuses(next);
+  const happyCount = countStatus(next, "happy");
+  const harmonyGain = happyCount / next.georgies.length;
+  next.harmony = roundTenths(next.harmony + harmonyGain);
+
+  if (next.phase === "little") {
+    maybeEnterSpecialistPhase(next, notes);
+    if (next.phase === "little") {
+      maybeGrowLittlePopulation(next, notes);
+      maybeEnterSpecialistPhase(next, notes);
+    }
+  }
+
+  next.day += 1;
+  next.lastEvent = getNextEvent(next, {
+    gathered,
+    basketsMade,
+    houseProgressMade,
+    ate: food.ate,
+    hungry: food.hungry,
+    startedWithApples
+  });
+  next.log = [
+    summarizeDay(next, { gathered, basketsMade, houseProgressMade, food, chiefWorked }),
+    ...notes,
+    ...next.log
+  ].slice(0, 8);
+
+  for (const georgie of next.georgies) {
+    georgie.isNew = false;
+    georgie.plan = "work";
+  }
+
+  return next;
 }
 
 export function countStatus(state, status) {
   return state.georgies.filter((georgie) => georgie.status === status).length;
 }
 
-export function getHarvest(state) {
-  const base = state.georgies.reduce((total, georgie) => {
-    if (georgie.status === "happy") return total + 2;
-    if (georgie.status === "tired") return total + 2;
-    return total + 1;
-  }, 0);
-
-  return base + state.orchards;
+export function countRole(state, role) {
+  return state.georgies.filter((georgie) => georgie.role === role).length;
 }
 
-export function applyAction(state, actionId) {
-  const action = ACTIONS.find((candidate) => candidate.id === actionId);
-  if (!action) {
-    throw new Error(`Unknown action: ${actionId}`);
-  }
+export function getReadiness(state) {
+  if (state.phase === "village") return 100;
 
-  if (!action.canUse(state)) {
-    return cloneState(state);
-  }
-
-  return action.apply(state);
+  const apples = Math.min(1, state.apples / SPECIALIST_APPLE_TARGET);
+  const harmony = Math.min(1, state.harmony / SPECIALIST_HARMONY_TARGET);
+  const population = Math.min(1, state.georgies.length / SPECIALIST_POPULATION_TARGET);
+  return Math.round((apples * 0.35 + harmony * 0.35 + population * 0.3) * 100);
 }
 
-export function endDay(state) {
-  const next = cloneState(state);
-  const event = EVENT_DECK[(next.day + next.orchards + next.rentDrain) % EVENT_DECK.length];
-  const harvest = getHarvest(next);
-  const foodNeed = next.georgies.length;
-  const rent = next.rentDrain;
-  const eventApples = event.apples ?? 0;
-
-  next.apples += harvest + eventApples;
-  next.commons += event.commons ?? 0;
-  next.rentDrain = Math.max(1, next.rentDrain + (event.rentDrain ?? 0));
-  next.apples -= foodNeed + rent;
-
-  if (next.apples < 0) {
-    const shortage = Math.abs(next.apples);
-    next.apples = 0;
-    degradeGeorgies(next, Math.min(next.georgies.length, shortage));
-    next.log.unshift(`Short by ${shortage} apples after food and rent.`);
-  } else {
-    recoverFromSurplus(next);
-    next.log.unshift(`Gathered ${harvest} apples, then paid ${foodNeed + rent} for food and rent.`);
-  }
-
-  if (event.fatigue) {
-    degradeGeorgies(next, event.fatigue);
-  }
-
-  next.lastEvent = event;
-  next.day += 1;
-  return next;
+export function getScore(state) {
+  const happy = countStatus(state, "happy");
+  const tired = countStatus(state, "tired");
+  const broken = countStatus(state, "broken");
+  return Math.max(
+    0,
+    happy * 14 +
+      tired * 7 +
+      state.apples * 2 +
+      state.harmony * 5 +
+      state.baskets * 4 +
+      state.houses * 8 +
+      state.commons * 2 -
+      broken * 12
+  );
 }
 
 export function isSeasonOver(state) {
@@ -219,30 +213,30 @@ export function getEnding(state) {
   if (broken >= state.georgies.length) {
     return {
       kicker: "Season failed",
-      title: "The orchard went quiet",
-      body: "Every Little Georgie broke under hunger and rent. Next time, build the commons before the drain eats the harvest.",
+      title: "The pantry went quiet",
+      body: "Every Georgie broke after going hungry. The next village will need more rest and a deeper apple reserve.",
       score,
       happy,
       broken
     };
   }
 
-  if (score >= 90 && broken === 0) {
+  if (state.phase === "village" && score >= 110 && broken === 0) {
     return {
       kicker: "Season complete",
-      title: "The commons flourished",
-      body: "The apples fed the gatherers, the rent filled the common fund, and the Little Georgies ended the season standing tall.",
+      title: "The village held together",
+      body: "The Little Georgies grew into a working village, with leadership, farming, building, and enough apples to keep hope alive.",
       score,
       happy,
       broken
     };
   }
 
-  if (score >= 60) {
+  if (state.phase === "village") {
     return {
       kicker: "Season complete",
-      title: "The settlement held",
-      body: "The Little Georgies made it through. A few were worn down, but the shared orchard is still alive for another season.",
+      title: "A village takes shape",
+      body: "The specialists arrived and the village survived. A steadier rhythm of work, rest, and food would make it flourish.",
       score,
       happy,
       broken
@@ -251,49 +245,160 @@ export function getEnding(state) {
 
   return {
     kicker: "Season complete",
-    title: "A hard lesson",
-    body: "The Georgies survived, but rent and exhaustion took too much. A stronger common fund would change the next season.",
+    title: "Still just Little Georgies",
+    body: "The first band survived, but did not save enough apples and happy days to organize the specialist village.",
     score,
     happy,
     broken
   };
 }
 
-function improveGeorgies(state, count) {
-  const priority = ["broken", "tired"];
-  let remaining = count;
+export function getAppleYield(georgie, baskets) {
+  if (georgie.role === "farmer") {
+    if (georgie.status === "broken") return 1;
+    const base = georgie.status === "happy" ? 3 : 2;
+    return baskets > 0 ? base + 2 : base;
+  }
 
-  for (const status of priority) {
-    for (const georgie of state.georgies) {
-      if (remaining === 0) return;
-      if (georgie.status === status) {
-        georgie.status = status === "broken" ? "tired" : "happy";
-        remaining -= 1;
-      }
-    }
+  if (georgie.status === "broken") return 1;
+  return 2;
+}
+
+function getBuilderOutput(status) {
+  if (status === "happy") {
+    return { baskets: 2, houseProgress: 2 };
+  }
+
+  if (status === "tired") {
+    return { baskets: 1, houseProgress: 1 };
+  }
+
+  return { baskets: 1, houseProgress: 0 };
+}
+
+function applyChiefWork(state, notes) {
+  const chief = state.georgies.find((georgie) => georgie.role === "chief");
+  if (!chief) return;
+
+  const levyLimit = chief.status === "happy" ? 2 : chief.status === "tired" ? 1 : 0;
+  const levied = Math.min(levyLimit, state.apples);
+  state.apples -= levied;
+  state.commons += levied;
+
+  const hungryEstimate = Math.max(0, state.georgies.length - state.apples);
+  const redistributed = Math.min(state.commons, hungryEstimate);
+  state.commons -= redistributed;
+  state.apples += redistributed;
+
+  if (levied > 0 || redistributed > 0) {
+    notes.push(`Chief Georgie levied ${levied} and redistributed ${redistributed} apples.`);
   }
 }
 
-function degradeGeorgies(state, count) {
-  const priority = ["tired", "happy"];
-  let remaining = count;
+function feedAndUpdateStatuses(state) {
+  let ate = 0;
+  let hungry = 0;
 
-  for (const status of priority) {
-    for (const georgie of [...state.georgies].reverse()) {
-      if (remaining === 0) return;
-      if (georgie.status === status) {
-        georgie.status = status === "happy" ? "tired" : "broken";
-        remaining -= 1;
-      }
+  for (const georgie of state.georgies) {
+    if (state.apples > 0) {
+      state.apples -= 1;
+      ate += 1;
+      georgie.status = georgie.plan === "rest" ? "happy" : "tired";
+    } else {
+      hungry += 1;
+      georgie.status = "broken";
     }
   }
+
+  return { ate, hungry };
 }
 
-function recoverFromSurplus(state) {
-  if (state.apples < 5) return;
-  const tired = state.georgies.find((georgie) => georgie.status === "tired");
-  if (!tired) return;
-  tired.status = "happy";
-  state.apples -= 2;
-  state.log.unshift("A fed, rested Georgie felt happy again.");
+function maybeGrowLittlePopulation(state, notes) {
+  if (state.georgies.length >= 5) return;
+  if (countStatus(state, "broken") > 0) return;
+
+  const growthCost = 3 + state.georgies.length;
+  if (state.apples < growthCost) return;
+
+  const name = NAMES[(state.nextId - 1) % NAMES.length];
+  state.apples -= growthCost;
+  state.georgies.push({
+    id: state.nextId,
+    name,
+    role: "little",
+    status: "happy",
+    plan: "work",
+    isNew: true
+  });
+  state.nextId += 1;
+  notes.push(`${name} joined as a happy Little Georgie.`);
+}
+
+function maybeEnterSpecialistPhase(state, notes) {
+  if (state.apples < SPECIALIST_APPLE_TARGET) return;
+  if (state.harmony < SPECIALIST_HARMONY_TARGET) return;
+  if (state.georgies.length < SPECIALIST_POPULATION_TARGET) return;
+
+  state.phase = "village";
+  state.baskets = Math.max(1, state.baskets);
+  state.houses = Math.max(1, state.houses);
+  state.commons += 2;
+  state.georgies = [
+    { id: state.nextId, name: "Chief", role: "chief", status: "happy", plan: "work", isNew: true },
+    { id: state.nextId + 1, name: "Farmer", role: "farmer", status: "happy", plan: "work", isNew: true },
+    { id: state.nextId + 2, name: "Builder", role: "builder", status: "happy", plan: "work", isNew: true }
+  ];
+  state.nextId += 3;
+  notes.push("The Little Georgies organized into Chief, Farmer, and Builder Georgies.");
+}
+
+function getNextEvent(state, result) {
+  if (state.phase === "village") {
+    return {
+      title: "The specialist village",
+      body: "Chief, Farmer, and Builder Georgies now need coordinated work, rest, food, baskets, and houses."
+    };
+  }
+
+  if (result.hungry > 0) {
+    return {
+      title: "An empty pantry",
+      body: "A Georgie who cannot eat an apple becomes broken on the next morning."
+    };
+  }
+
+  if (state.georgies.some((georgie) => georgie.isNew)) {
+    return {
+      title: "A new happy face",
+      body: "Saved apples made room for another Little Georgie to join the orchard."
+    };
+  }
+
+  if (getReadiness(state) >= 75) {
+    return {
+      title: "Almost a village",
+      body: "Enough happy days and saved apples will invite Chief, Farmer, and Builder Georgies."
+    };
+  }
+
+  return {
+    title: "Work, rest, eat",
+    body: "A working Georgie who eats becomes tired. A resting Georgie who eats becomes happy."
+  };
+}
+
+function summarizeDay(state, result) {
+  const pieces = [];
+
+  if (result.gathered > 0) pieces.push(`gathered ${result.gathered} apples`);
+  if (result.basketsMade > 0) pieces.push(`made ${result.basketsMade} baskets`);
+  if (result.houseProgressMade > 0) pieces.push(`built ${result.houseProgressMade} house progress`);
+  if (result.chiefWorked) pieces.push("shared under Chief Georgie's watch");
+  if (pieces.length === 0) pieces.push("rested");
+
+  return `Day ${state.day - 1}: ${pieces.join(", ")}. ${result.food.ate} ate, ${result.food.hungry} went hungry.`;
+}
+
+function roundTenths(value) {
+  return Math.round(value * 10) / 10;
 }

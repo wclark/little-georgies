@@ -2,7 +2,9 @@
 
 Little Georgies is a dependency-free HTML/CSS/JS game for `georgist.org/little-georgies/`.
 
-The player guides a small band of apple gatherers through a short season. Happy Georgies gather well, tired Georgies can still work but risk breaking down, and broken Georgies need the commons to recover. The theme is simple: survival gets easier when land rent is captured for the common fund instead of draining the harvest.
+The player starts with one happy Little Georgie and guides the settlement through a short season. Each day, every Georgie can work or rest. Workers gather, lead, farm, or build first; then each Georgie eats an apple if the pantry has one. A fed worker becomes tired, a fed rester becomes happy, and an unfed Georgie becomes broken.
+
+If the early band saves enough apples, accumulates enough happy days, and grows to enough people, the game enters a specialist phase with one Chief Georgie, one Farmer Georgie, and one Builder Georgie. The Chief can levy and redistribute apples, the Farmer gathers more with baskets, and the Builder makes baskets and houses.
 
 ## Local Development
 
@@ -47,4 +49,4 @@ Configure these repository settings before running the manual deploy workflow:
 
 ## Source Art
 
-The included splash and character images are cropped from the reference image supplied for this project. Keep `assets/images/little-georgie-reference.png` with the repo as the source reference for future edits.
+The included splash and character images are cropped from the reference images supplied for this project. `assets/images/little-georgie-reference.png` is kept in the repo as source reference for future edits, but it is excluded from the deployed build.

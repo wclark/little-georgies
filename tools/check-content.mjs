@@ -12,6 +12,15 @@ const requiredFiles = [
   "assets/images/georgie-happy.png",
   "assets/images/georgie-tired.png",
   "assets/images/georgie-broken.png",
+  "assets/images/chief-happy.png",
+  "assets/images/chief-tired.png",
+  "assets/images/chief-broken.png",
+  "assets/images/farmer-happy.png",
+  "assets/images/farmer-tired.png",
+  "assets/images/farmer-broken.png",
+  "assets/images/builder-happy.png",
+  "assets/images/builder-tired.png",
+  "assets/images/builder-broken.png",
   "assets/images/apple.png"
 ];
 
@@ -28,13 +37,19 @@ const rootPage = readFileSync(resolve(root, "site/index.html"), "utf8");
 
 for (const asset of [
   "./assets/images/splash-orchard.png",
-  "./assets/images/georgie-happy.png",
-  "./assets/images/georgie-tired.png",
-  "./assets/images/georgie-broken.png"
+  "./assets/images/georgie-happy.png"
 ]) {
   if (!index.includes(asset) && !main.includes(asset)) {
     throw new Error(`The app does not reference ${asset}`);
   }
+}
+
+if (!main.includes("${georgie.role}-${georgie.status}${suffix}.png")) {
+  throw new Error("The app must dynamically reference specialist role art");
+}
+
+if (!main.includes("georgie-${georgie.status}.png")) {
+  throw new Error("The app must dynamically reference Little Georgie state art");
 }
 
 if (!rootPage.includes("/little-georgies/")) {

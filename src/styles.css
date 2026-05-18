@@ -259,31 +259,43 @@ p {
   padding: 20px 22px 22px;
 }
 
-.action-card {
+.planner-card {
   display: grid;
-  min-height: 142px;
-  align-content: start;
-  gap: 6px;
-  padding: 14px;
+  grid-template-rows: minmax(160px, 220px) auto auto;
+  gap: 12px;
+  min-height: 358px;
+  padding: 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--ink);
-  text-align: left;
   background: #fffdf7;
 }
 
-.action-card:hover:not(:disabled),
-.action-card:focus-visible {
+.planner-card > img {
+  width: 100%;
+  height: 100%;
+  min-height: 160px;
+  border-radius: 6px;
+  object-fit: cover;
+  object-position: center top;
+  background: #e9ecd4;
+}
+
+.planner-card.little > img {
+  width: 112px;
+  height: 112px;
+  min-height: 112px;
+  align-self: center;
+  justify-self: center;
+  border: 4px solid #89ba28;
+  border-radius: 50%;
+}
+
+.planner-card:hover {
   border-color: var(--leaf);
-  outline: 3px solid rgba(40, 103, 65, 0.14);
-  outline-offset: 2px;
 }
 
-.action-card:disabled {
-  opacity: 0.48;
-}
-
-.action-card span,
+.planner-card span,
 .stat span,
 .meter-label span,
 .georgie-card span {
@@ -294,33 +306,77 @@ p {
   text-transform: uppercase;
 }
 
-.action-card strong {
+.planner-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.planner-card strong {
   font-size: 1.18rem;
 }
 
-.action-card small {
+.planner-card small {
   color: var(--muted);
   font-size: 0.92rem;
   line-height: 1.35;
 }
 
-.action-card em {
-  align-self: end;
-  color: var(--leaf);
-  font-size: 0.85rem;
-  font-style: normal;
-  font-weight: 900;
+.segmented-control {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 42px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ece6d2;
 }
 
-.end-turn {
+.segmented-control button {
+  border: 0;
+  border-radius: 6px;
+  color: var(--muted);
+  font-weight: 900;
+  background: transparent;
+}
+
+.segmented-control button.is-active {
   color: #fffaf0;
+  background: var(--leaf-dark);
+  box-shadow: 0 3px 10px rgba(36, 29, 23, 0.14);
+}
+
+.segmented-control button:hover,
+.segmented-control button:focus-visible {
+  outline: 3px solid rgba(40, 103, 65, 0.16);
+  outline-offset: 1px;
+}
+
+.end-day-button {
+  display: grid;
+  min-height: 142px;
+  align-content: center;
+  gap: 6px;
+  padding: 18px;
+  border: 0;
+  border-radius: 8px;
+  color: #fffaf0;
+  text-align: left;
   background: var(--leaf-dark);
 }
 
-.end-turn span,
-.end-turn small,
-.end-turn em {
+.end-day-button span,
+.end-day-button small {
   color: rgba(255, 250, 240, 0.78);
+}
+
+.end-day-button strong {
+  font-size: 1.2rem;
+}
+
+.end-day-button:focus-visible,
+.end-day-button:hover {
+  outline: 3px solid rgba(230, 157, 38, 0.36);
+  outline-offset: 3px;
 }
 
 .ledger {
@@ -376,6 +432,26 @@ p {
   border-radius: inherit;
   background: linear-gradient(90deg, var(--apple), var(--gold), #82ad2d);
   transition: width 220ms ease;
+}
+
+.status-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.status-strip span {
+  min-height: 42px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  text-align: center;
+  background: #fffdf7;
+}
+
+.status-strip strong {
+  color: var(--ink);
 }
 
 .georgie-list h2,
@@ -507,7 +583,8 @@ p {
 
   .action-grid,
   .stat-grid,
-  .georgie-grid {
+  .georgie-grid,
+  .status-strip {
     grid-template-columns: 1fr;
   }
 

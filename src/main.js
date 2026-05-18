@@ -1,20 +1,15 @@
 import {
-  ACTIONS,
   MAX_DAY,
-  applyAction,
+  ROLE_INFO,
+  advanceDay,
   countStatus,
   createInitialState,
-  endDay,
   getEnding,
+  getReadiness,
   getScore,
-  isSeasonOver
+  isSeasonOver,
+  setPlan
 } from "./game.js";
-
-const statusImage = {
-  happy: "./assets/images/georgie-happy.png",
-  tired: "./assets/images/georgie-tired.png",
-  broken: "./assets/images/georgie-broken.png"
-};
 
 const statusLabel = {
   happy: "Happy",
@@ -35,7 +30,7 @@ const bindings = [...document.querySelectorAll("[data-bind]")].reduce((map, elem
 const actionsEl = document.querySelector("[data-role='actions']");
 const georgiesEl = document.querySelector("[data-role='georgies']");
 const logEl = document.querySelector("[data-role='log']");
-const scoreMeter = document.querySelector("[data-bind-style='score']");
+const readinessMeter = document.querySelector("[data-bind-style='readiness']");
 
 document.addEventListener("click", (event) => {
   const target = event.target.closest("[data-action]");
@@ -56,13 +51,14 @@ document.addEventListener("click", (event) => {
   }
 
   if (action === "end-day") {
-    state = endDay(state);
+    state = advanceDay(state);
     finishOrRender();
     return;
   }
 
-  if (action.startsWith("policy:")) {
-    state = applyAction(state, action.replace("policy:", ""));
+  if (action.startsWith("plan:")) {
+    const [, id, plan] = action.split(":");
+    state = setPlan(state, Number(id), plan);
     render();
   }
 });
@@ -86,17 +82,26 @@ function finishOrRender() {
 }
 
 function render() {
+  const readiness = getReadiness(state);
+
   setText("day", Math.min(state.day, MAX_DAY));
+  setText("maxDay", MAX_DAY);
+  setText("phase", state.phase === "little" ? "Little band" : "Specialist village");
   setText("apples", state.apples);
+  setText("population", state.georgies.length);
+  setText("baskets", state.baskets);
+  setText("houses", state.houses);
   setText("commons", state.commons);
-  setText("orchards", state.orchards);
-  setText("rentDrain", state.rentDrain);
+  setText("harmony", state.harmony.toFixed(1));
+  setText("readiness", readiness);
   setText("score", getScore(state));
   setText("eventTitle", state.lastEvent.title);
   setText("eventBody", state.lastEvent.body);
+  setText("happyCount", countStatus(state, "happy"));
+  setText("tiredCount", countStatus(state, "tired"));
+  setText("brokenCount", countStatus(state, "broken"));
 
-  const score = Math.min(100, getScore(state));
-  scoreMeter.style.width = `${score}%`;
+  readinessMeter.style.width = `${readiness}%`;
 
   renderActions();
   renderGeorgies();
@@ -104,26 +109,39 @@ function render() {
 }
 
 function renderActions() {
-  const actionButtons = ACTIONS.map((action) => {
-    const enabled = action.canUse(state);
-    const cost = formatCost(action.cost);
+  const plannerCards = state.georgies.map((georgie) => {
+    const role = ROLE_INFO[georgie.role];
+    const image = getGeorgieImage(georgie, "scene");
     return `
-      <button class="action-card" type="button" data-action="policy:${action.id}" ${enabled ? "" : "disabled"}>
-        <span>${action.title}</span>
-        <strong>${action.label}</strong>
-        <small>${action.summary}</small>
-        ${cost ? `<em>${cost}</em>` : ""}
-      </button>
+      <article class="planner-card ${georgie.status} ${georgie.role}">
+        <img src="${image}" alt="">
+        <div class="planner-copy">
+          <span>${role.label}</span>
+          <strong>${georgie.name}</strong>
+          <small>${role.workSummary}</small>
+        </div>
+        <div class="segmented-control" aria-label="${georgie.name} plan">
+          <button
+            type="button"
+            class="${georgie.plan === "work" ? "is-active" : ""}"
+            data-action="plan:${georgie.id}:work"
+          >${role.workLabel}</button>
+          <button
+            type="button"
+            class="${georgie.plan === "rest" ? "is-active" : ""}"
+            data-action="plan:${georgie.id}:rest"
+          >${role.restLabel}</button>
+        </div>
+      </article>
     `;
   }).join("");
 
   actionsEl.innerHTML = `
-    ${actionButtons}
-    <button class="action-card end-turn" type="button" data-action="end-day">
-      <span>Gather apples</span>
-      <strong>End day</strong>
-      <small>Harvest, feed the crew, and face tomorrow's event.</small>
-      <em>Required</em>
+    ${plannerCards}
+    <button class="end-day-button" type="button" data-action="end-day">
+      <span>Resolve day</span>
+      <strong>Eat apples and start tomorrow</strong>
+      <small>Workers gather first. Then every Georgie eats if an apple is available.</small>
     </button>
   `;
 }
@@ -131,17 +149,17 @@ function renderActions() {
 function renderGeorgies() {
   georgiesEl.innerHTML = state.georgies.map((georgie) => `
     <article class="georgie-card ${georgie.status}">
-      <img src="${statusImage[georgie.status]}" alt="">
+      <img src="${getGeorgieImage(georgie, "avatar")}" alt="">
       <div>
         <strong>${georgie.name}</strong>
-        <span>${statusLabel[georgie.status]}</span>
+        <span>${ROLE_INFO[georgie.role].label} - ${statusLabel[georgie.status]}</span>
       </div>
     </article>
   `).join("");
 }
 
 function renderLog() {
-  logEl.innerHTML = state.log.slice(0, 5).map((entry) => `<li>${entry}</li>`).join("");
+  logEl.innerHTML = state.log.slice(0, 6).map((entry) => `<li>${entry}</li>`).join("");
 }
 
 function renderEnding() {
@@ -160,9 +178,11 @@ function setText(key, value) {
   }
 }
 
-function formatCost(cost = {}) {
-  const parts = [];
-  if (cost.apples) parts.push(`${cost.apples} apples`);
-  if (cost.commons) parts.push(`${cost.commons} fund`);
-  return parts.join(", ");
+function getGeorgieImage(georgie, mode) {
+  if (georgie.role === "little") {
+    return `./assets/images/georgie-${georgie.status}.png`;
+  }
+
+  const suffix = mode === "avatar" ? "-avatar" : "";
+  return `./assets/images/${georgie.role}-${georgie.status}${suffix}.png`;
 }

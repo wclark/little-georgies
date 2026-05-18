@@ -23,8 +23,8 @@
           <p class="eyebrow">Georgist.org presents</p>
           <h1 id="splash-title">Little Georgies</h1>
           <p>
-            Gather apples, capture the rent, and keep every little worker from sliding
-            from happy to tired to broken.
+            Start with one happy gatherer. Choose work or rest, save enough apples,
+            and grow into a village of Chief, Farmer, and Builder Georgies.
           </p>
           <button class="primary-button" type="button" data-action="start">Start season</button>
         </div>
@@ -34,11 +34,11 @@
         <header class="topbar">
           <a class="home-link" href="https://georgist.org/">Georgist.org</a>
           <div>
-            <p class="eyebrow">Day <span data-bind="day">1</span> of 18</p>
+            <p class="eyebrow">Day <span data-bind="day">1</span> of <span data-bind="maxDay">28</span></p>
             <h1>Little Georgies</h1>
           </div>
           <button class="icon-button" type="button" data-action="reset" aria-label="Restart season">
-            <span aria-hidden="true">↻</span>
+            <span aria-hidden="true">R</span>
           </button>
         </header>
 
@@ -49,10 +49,10 @@
               <div class="tree-shade" aria-hidden="true"></div>
             </div>
             <div class="orchard-copy">
-              <p class="eyebrow">Common orchard</p>
+              <p class="eyebrow" data-bind="phase">Little band</p>
               <h2 id="orchard-title" data-bind="eventTitle">A fresh morning</h2>
               <p data-bind="eventBody">
-                The apples are ripe. The question is who keeps the rent from the land.
+                Work gathers apples. Rest can restore a fed Georgie to happiness.
               </p>
             </div>
             <div class="action-grid" data-role="actions"></div>
@@ -65,29 +65,43 @@
                 <strong data-bind="apples">0</strong>
               </div>
               <div class="stat">
+                <span>Georgies</span>
+                <strong data-bind="population">1</strong>
+              </div>
+              <div class="stat">
+                <span>Baskets</span>
+                <strong data-bind="baskets">0</strong>
+              </div>
+              <div class="stat">
+                <span>Houses</span>
+                <strong data-bind="houses">0</strong>
+              </div>
+              <div class="stat">
                 <span>Common fund</span>
                 <strong data-bind="commons">0</strong>
               </div>
               <div class="stat">
-                <span>Orchards</span>
-                <strong data-bind="orchards">0</strong>
-              </div>
-              <div class="stat">
-                <span>Rent drain</span>
-                <strong data-bind="rentDrain">0</strong>
+                <span>Harmony</span>
+                <strong data-bind="harmony">0.0</strong>
               </div>
             </div>
 
             <div class="meter-block">
               <div class="meter-label">
-                <span>Season score</span>
-                <strong data-bind="score">0</strong>
+                <span>Specialist readiness</span>
+                <strong><span data-bind="readiness">0</span>%</strong>
               </div>
-              <div class="meter" aria-hidden="true"><span data-bind-style="score"></span></div>
+              <div class="meter" aria-hidden="true"><span data-bind-style="readiness"></span></div>
+            </div>
+
+            <div class="status-strip" aria-label="Condition counts">
+              <span><strong data-bind="happyCount">1</strong> happy</span>
+              <span><strong data-bind="tiredCount">0</strong> tired</span>
+              <span><strong data-bind="brokenCount">0</strong> broken</span>
             </div>
 
             <section class="georgie-list" aria-labelledby="georgies-title">
-              <h2 id="georgies-title">The gatherers</h2>
+              <h2 id="georgies-title">The Georgies</h2>
               <div class="georgie-grid" data-role="georgies"></div>
             </section>
 
