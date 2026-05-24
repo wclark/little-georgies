@@ -188,6 +188,23 @@ test("role plans batch update specialists while individual plans stay independen
   assert.equal(next.georgies.find((georgie) => georgie.id === 3).status, "happy");
 });
 
+test("role plans batch update named Little Georgies and persist after a day", () => {
+  const state = createInitialState();
+  state.phase = "band";
+  state.apples = 2;
+  state.georgies = [
+    { id: 1, name: "Henry", role: "little", status: "happy", plan: "work", hasBasket: false, hasHouse: false, moodHistory: [], isNew: false },
+    { id: 2, name: "Ada", role: "little", status: "happy", plan: "work", hasBasket: false, hasHouse: false, moodHistory: [], isNew: false }
+  ];
+
+  const plannedRest = setRolePlan(state, "little", "rest");
+  assert.deepEqual(plannedRest.georgies.map((georgie) => georgie.plan), ["rest", "rest"]);
+
+  const next = advanceDay(plannedRest);
+  assert.deepEqual(next.georgies.map((georgie) => georgie.plan), ["rest", "rest"]);
+  assert.equal(next.georgies.every((georgie) => georgie.status === "happy"), true);
+});
+
 test("broken Georgies are forced into minimal work instead of rest", () => {
   const state = createInitialState();
   state.apples = 1;

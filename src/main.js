@@ -134,7 +134,18 @@ function getNavigationPath(action) {
 }
 
 function syncViewPath() {
-  if (state.phase !== "village") {
+  if (state.phase === "solo") {
+    viewPath = { level: "root" };
+    return;
+  }
+
+  if (state.phase === "band") {
+    if (viewPath.level === "person") {
+      const georgie = state.georgies.find((candidate) => candidate.id === viewPath.id && candidate.role === "little");
+      viewPath = georgie ? viewPath : { level: "root" };
+      return;
+    }
+
     viewPath = { level: "root" };
     return;
   }
@@ -206,6 +217,11 @@ function renderFeature() {
     return;
   }
 
+  if (viewPath.level === "person") {
+    renderPersonDetailFeature();
+    return;
+  }
+
   renderBandFeature();
 }
 
@@ -234,22 +250,24 @@ function renderSoloFeature() {
 }
 
 function renderBandFeature() {
+  const counts = getRoleCounts("little");
+  const role = ROLE_INFO.little;
+
   featureEl.innerHTML = `
-    <div class="band-grid">
-      ${state.georgies.map((georgie) => {
-        const role = ROLE_INFO[georgie.role];
-        return `
-          <article class="person-card ${georgie.status}">
-            <img src="${getGeorgieImage(georgie, "scene")}" alt="${statusLabel[georgie.status]} ${georgie.name}">
-            <div class="person-copy">
-              <span>${role.label}</span>
-              <strong>${georgie.name}</strong>
-              <small>${statusLabel[georgie.status]} - ${role.workSummary}</small>
-            </div>
-            ${renderGeorgiePlanControl(georgie, `${georgie.name} plan`)}
-          </article>
-        `;
-      }).join("")}
+    <div class="hierarchy-view">
+      <article class="focus-panel ${counts.median} little">
+        <img src="${getGeorgieImage({ role: "little", status: counts.median }, "scene")}" alt="${statusLabel[counts.median]} ${role.plural}">
+        <div class="focus-copy">
+          <span>${role.plural}</span>
+          <h3>${role.plural}</h3>
+          <p>Named gatherers share one apple pile. Each Georgie keeps an individual work or rest plan.</p>
+          ${renderSummaryStats(getRoleStats("little"))}
+          ${renderRolePlanControl("little", `${role.plural} plan`)}
+        </div>
+      </article>
+      <div class="tile-grid individual-tile-grid" aria-label="${role.plural}">
+        ${getRoleGeorgies("little").map((georgie) => renderPersonTile(georgie)).join("")}
+      </div>
     </div>
   `;
 }
@@ -315,9 +333,9 @@ function renderPersonDetailFeature() {
 
   featureEl.innerHTML = `
     <div class="hierarchy-view">
-      ${renderBreadcrumb(`view:role:${georgie.role}`, role.plural)}
+      ${renderBreadcrumb(state.phase === "band" ? "view:root" : `view:role:${georgie.role}`, role.plural)}
       <article class="focus-panel ${georgie.status} ${georgie.role}">
-        <img src="${getRoleImage(georgie.role, georgie.status)}" alt="${statusLabel[georgie.status]} ${formatGeorgieName(georgie)}">
+        <img src="${getGeorgieImage(georgie, "scene")}" alt="${statusLabel[georgie.status]} ${formatGeorgieName(georgie)}">
         <div class="focus-copy">
           <span>${role.label}</span>
           <h3>${formatGeorgieName(georgie)}</h3>
@@ -360,7 +378,7 @@ function renderRoleTile(counts) {
         <span>${role.plural}</span>
         <strong>${counts.total} total</strong>
         <small>${counts.happy} happy / ${counts.tired} tired / ${counts.broken} broken</small>
-        <small>${happyRate} happy 10-day</small>
+        <small>${happyRate} happy</small>
         <small>${getRoleProductionSummary(counts.role)}</small>
       </button>
       ${renderRolePlanControl(counts.role, `${role.plural} plan`)}
@@ -374,11 +392,11 @@ function renderPersonTile(georgie) {
   return `
     <article class="nav-tile ${georgie.status} ${georgie.role}">
       <button class="tile-open" type="button" data-action="view:person:${georgie.role}:${georgie.id}">
-        <img src="${getRoleImage(georgie.role, georgie.status, "avatar")}" alt="">
+        <img src="${getGeorgieImage(georgie, "avatar")}" alt="">
         <span>${role.label}</span>
         <strong>${formatGeorgieName(georgie)}</strong>
         <small>${statusLabel[georgie.status]} - ${getPersonOutput(georgie)}</small>
-        <small>${roundPercent(getGeorgieHappyRate(georgie))} happy 10-day</small>
+        <small>${roundPercent(getGeorgieHappyRate(georgie))} happy</small>
       </button>
       ${renderGeorgiePlanControl(georgie, `${formatGeorgieName(georgie)} plan`)}
     </article>
@@ -492,7 +510,7 @@ function renderStats() {
   if (state.phase !== "solo") {
     stats.push(
       { label: state.phase === "band" ? "Little Georgies" : "Georgies", value: state.georgies.length },
-      { label: `Happy ${HAPPY_RATE_WINDOW_DAYS}-day`, value: `${Math.round(getHappyRate(state) * 100)}%` },
+      { label: "Happy", value: `${Math.round(getHappyRate(state) * 100)}%` },
       { label: "Total apples", value: state.totalApples }
     );
   }
@@ -683,27 +701,45 @@ function isGeorgiePlanDisabled(georgie, plan) {
 function getRoleStats(role) {
   const counts = getRoleCounts(role);
   const georgies = getRoleGeorgies(role);
-  return [
+  const stats = [
     { label: "Total", value: counts.total },
     { label: "Median mood", value: statusLabel[counts.median] },
     { label: "Mood mix", value: `${counts.happy} happy / ${counts.tired} tired / ${counts.broken} broken` },
-    { label: `Happy ${HAPPY_RATE_WINDOW_DAYS}-day`, value: roundPercent(getGeorgiesHappyRate(georgies)) },
+    { label: "Happy", value: roundPercent(getGeorgiesHappyRate(georgies)) },
     { label: "Plan", value: getPlanLabel(role, getRolePlan(role)) },
-    { label: "Baskets held", value: georgies.filter((georgie) => georgie.hasBasket).length },
-    { label: "Housed", value: georgies.filter((georgie) => georgie.hasHouse).length },
     { label: "Output", value: getRoleProductionSummary(role) }
   ];
+
+  if (role !== "little") {
+    stats.splice(
+      5,
+      0,
+      { label: "Baskets held", value: georgies.filter((georgie) => georgie.hasBasket).length },
+      { label: "Housed", value: georgies.filter((georgie) => georgie.hasHouse).length }
+    );
+  }
+
+  return stats;
 }
 
 function getPersonStats(georgie) {
-  return [
+  const stats = [
     { label: "Mood", value: statusLabel[georgie.status] },
-    { label: `Happy ${HAPPY_RATE_WINDOW_DAYS}-day`, value: roundPercent(getGeorgieHappyRate(georgie)) },
+    { label: "Happy", value: roundPercent(getGeorgieHappyRate(georgie)) },
     { label: "Plan", value: getPlanLabel(georgie.role, getGeorgiePlan(georgie)) },
-    { label: "Basket", value: georgie.hasBasket ? "Held" : "None" },
-    { label: "House", value: georgie.hasHouse ? "Housed" : "None" },
     { label: "Output", value: getPersonOutput(georgie) }
   ];
+
+  if (georgie.role !== "little") {
+    stats.splice(
+      3,
+      0,
+      { label: "Basket", value: georgie.hasBasket ? "Held" : "None" },
+      { label: "House", value: georgie.hasHouse ? "Housed" : "None" }
+    );
+  }
+
+  return stats;
 }
 
 function getPersonSummary(georgie) {
@@ -722,6 +758,14 @@ function getRoleProductionSummary(role) {
   const georgies = getRoleGeorgies(role);
 
   if (role === "farmer") {
+    const apples = georgies.reduce((total, georgie) => {
+      if (getGeorgiePlan(georgie) === "rest") return total;
+      return total + getAppleYield(georgie);
+    }, 0);
+    return `${apples} apples/day`;
+  }
+
+  if (role === "little") {
     const apples = georgies.reduce((total, georgie) => {
       if (getGeorgiePlan(georgie) === "rest") return total;
       return total + getAppleYield(georgie);
@@ -750,6 +794,10 @@ function getRoleProductionSummary(role) {
 function getPersonOutput(georgie) {
   const plan = getGeorgiePlan(georgie);
   if (plan === "rest") return "resting";
+
+  if (georgie.role === "little") {
+    return `${getAppleYield(georgie)} apples/day`;
+  }
 
   if (georgie.role === "farmer") {
     return `${getAppleYield(georgie)} apples/day`;

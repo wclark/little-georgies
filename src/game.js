@@ -99,6 +99,7 @@ export function createInitialState() {
     nextId: 2,
     chiefPolicy: getDefaultChiefPolicy(),
     rolePlans: {
+      little: "work",
       chief: "work",
       farmer: "work",
       builder: "basket"
@@ -151,7 +152,7 @@ export function setPlan(state, georgieId, plan) {
 }
 
 export function setRolePlan(state, role, plan) {
-  if (!["chief", "farmer", "builder"].includes(role)) {
+  if (!["little", "chief", "farmer", "builder"].includes(role)) {
     throw new Error(`Unknown role: ${role}`);
   }
 
@@ -251,9 +252,6 @@ export function advanceDay(state) {
   for (const georgie of next.georgies) {
     georgie.isNew = false;
     georgie.plan = normalizePlanForGeorgie(georgie, georgie.plan);
-    if (georgie.role === "little") {
-      georgie.plan = "work";
-    }
   }
 
   return next;
@@ -329,7 +327,7 @@ export function getScore(state) {
 }
 
 export function getRoleMoodCounts(state) {
-  return ["chief", "farmer", "builder"].map((role) => {
+  return ["little", "chief", "farmer", "builder"].map((role) => {
     const roleGeorgies = state.georgies.filter((georgie) => georgie.role === role);
     return {
       role,
