@@ -201,7 +201,7 @@ function render() {
 }
 
 function renderStageCopy() {
-  orchardCopyEl.hidden = state.phase !== "band";
+  orchardCopyEl.hidden = true;
 }
 
 function renderFeature() {
@@ -393,7 +393,7 @@ function renderPersonTile(georgie) {
     <article class="nav-tile ${georgie.status} ${georgie.role}">
       <button class="tile-open" type="button" data-action="view:person:${georgie.role}:${georgie.id}">
         <img src="${getGeorgieImage(georgie, "avatar")}" alt="">
-        <span>${role.label}</span>
+        ${georgie.role === "little" ? "" : `<span>${role.label}</span>`}
         <strong>${formatGeorgieName(georgie)}</strong>
         <small>${statusLabel[georgie.status]} - ${getPersonOutput(georgie)}</small>
         <small>${roundPercent(getGeorgieHappyRate(georgie))} happy</small>
