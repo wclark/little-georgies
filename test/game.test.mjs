@@ -8,6 +8,8 @@ import {
   countStatus,
   createInitialState,
   getAppleYield,
+  getGeorgieHappyRate,
+  getGeorgiesHappyRate,
   getHappyRate,
   getMedianStatus,
   getRoleMoodCounts,
@@ -119,7 +121,7 @@ test("happy rate retains only the last ten days once history exists", () => {
   state.apples = 1;
   state.georgies[0].status = "tired";
   state.georgies[0].plan = "rest";
-  state.moodHistory = Array.from({ length: HAPPY_RATE_WINDOW_DAYS }, (_, index) => ({
+  state.georgies[0].moodHistory = Array.from({ length: HAPPY_RATE_WINDOW_DAYS }, (_, index) => ({
     day: index + 1,
     happy: 0,
     total: 1
@@ -128,7 +130,28 @@ test("happy rate retains only the last ten days once history exists", () => {
   const next = advanceDay(state);
 
   assert.equal(next.moodHistory.length, HAPPY_RATE_WINDOW_DAYS);
+  assert.equal(next.georgies[0].moodHistory.length, HAPPY_RATE_WINDOW_DAYS);
   assert.equal(getHappyRate(next), 1 / HAPPY_RATE_WINDOW_DAYS);
+  assert.equal(getGeorgieHappyRate(next.georgies[0]), 1 / HAPPY_RATE_WINDOW_DAYS);
+});
+
+test("individual happy histories aggregate into village and group rates", () => {
+  const state = createInitialState();
+  state.phase = "village";
+  state.apples = 2;
+  state.georgies = [
+    { id: 1, name: "Ada", role: "farmer", status: "happy", plan: "rest", hasBasket: false, hasHouse: false, isNew: false },
+    { id: 2, name: "Mara", role: "farmer", status: "happy", plan: "work", hasBasket: false, hasHouse: false, isNew: false }
+  ];
+
+  const next = advanceDay(state);
+
+  assert.equal(next.georgies[0].status, "happy");
+  assert.equal(next.georgies[1].status, "tired");
+  assert.equal(getGeorgieHappyRate(next.georgies[0]), 1);
+  assert.equal(getGeorgieHappyRate(next.georgies[1]), 0);
+  assert.equal(getGeorgiesHappyRate(next.georgies), 0.5);
+  assert.equal(getHappyRate(next), 0.5);
 });
 
 test("farmer yield benefits from baskets while broken farmers cannot use them", () => {

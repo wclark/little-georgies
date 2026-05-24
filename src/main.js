@@ -6,6 +6,8 @@ import {
   createInitialState,
   getAppleYield,
   getEnding,
+  getGeorgieHappyRate,
+  getGeorgiesHappyRate,
   getGrowthHappyRate,
   getGrowthReadiness,
   getHappyRate,
@@ -349,6 +351,7 @@ function renderChiefFocus(chief) {
 
 function renderRoleTile(counts) {
   const role = ROLE_INFO[counts.role];
+  const happyRate = roundPercent(getGeorgiesHappyRate(getRoleGeorgies(counts.role)));
 
   return `
     <article class="nav-tile ${counts.median} ${counts.role}">
@@ -357,6 +360,7 @@ function renderRoleTile(counts) {
         <span>${role.plural}</span>
         <strong>${counts.total} total</strong>
         <small>${counts.happy} happy / ${counts.tired} tired / ${counts.broken} broken</small>
+        <small>${happyRate} happy 10-day</small>
         <small>${getRoleProductionSummary(counts.role)}</small>
       </button>
       ${renderRolePlanControl(counts.role, `${role.plural} plan`)}
@@ -374,6 +378,7 @@ function renderPersonTile(georgie) {
         <span>${role.label}</span>
         <strong>${formatGeorgieName(georgie)}</strong>
         <small>${statusLabel[georgie.status]} - ${getPersonOutput(georgie)}</small>
+        <small>${roundPercent(getGeorgieHappyRate(georgie))} happy 10-day</small>
       </button>
       ${renderGeorgiePlanControl(georgie, `${formatGeorgieName(georgie)} plan`)}
     </article>
@@ -682,6 +687,7 @@ function getRoleStats(role) {
     { label: "Total", value: counts.total },
     { label: "Median mood", value: statusLabel[counts.median] },
     { label: "Mood mix", value: `${counts.happy} happy / ${counts.tired} tired / ${counts.broken} broken` },
+    { label: `Happy ${HAPPY_RATE_WINDOW_DAYS}-day`, value: roundPercent(getGeorgiesHappyRate(georgies)) },
     { label: "Plan", value: getPlanLabel(role, getRolePlan(role)) },
     { label: "Baskets held", value: georgies.filter((georgie) => georgie.hasBasket).length },
     { label: "Housed", value: georgies.filter((georgie) => georgie.hasHouse).length },
@@ -692,6 +698,7 @@ function getRoleStats(role) {
 function getPersonStats(georgie) {
   return [
     { label: "Mood", value: statusLabel[georgie.status] },
+    { label: `Happy ${HAPPY_RATE_WINDOW_DAYS}-day`, value: roundPercent(getGeorgieHappyRate(georgie)) },
     { label: "Plan", value: getPlanLabel(georgie.role, getGeorgiePlan(georgie)) },
     { label: "Basket", value: georgie.hasBasket ? "Held" : "None" },
     { label: "House", value: georgie.hasHouse ? "Housed" : "None" },
@@ -806,6 +813,8 @@ function getDebugState() {
       effectivePlan: getGeorgiePlan(georgie),
       hasBasket: georgie.hasBasket,
       hasHouse: georgie.hasHouse,
+      moodHistory: georgie.moodHistory ?? [],
+      happyRate: roundPercent(getGeorgieHappyRate(georgie)),
       isNew: georgie.isNew
     })),
     log: state.log

@@ -467,7 +467,8 @@ p {
 }
 
 .individual-tile-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 1fr;
+  gap: 8px;
 }
 
 .nav-tile {
@@ -498,7 +499,7 @@ p {
 }
 
 .tile-open img {
-  grid-row: span 4;
+  grid-row: span 5;
   width: 72px;
   height: 72px;
   border-radius: 8px;
@@ -523,6 +524,39 @@ p {
 
 .nav-tile .segmented-control button {
   min-width: 0;
+}
+
+.individual-tile-grid .nav-tile {
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.54fr);
+  align-items: center;
+  min-height: 82px;
+  padding: 8px;
+}
+
+.individual-tile-grid .tile-open {
+  grid-template-columns: 56px minmax(0, 1fr);
+  min-height: 64px;
+  gap: 8px;
+  padding: 2px;
+}
+
+.individual-tile-grid .tile-open img {
+  grid-row: span 4;
+  width: 56px;
+  height: 56px;
+  border-radius: 7px;
+}
+
+.individual-tile-grid .tile-open strong {
+  font-size: 1rem;
+}
+
+.individual-tile-grid .tile-open small {
+  line-height: 1.2;
+}
+
+.individual-tile-grid .nav-tile .segmented-control {
+  min-height: 34px;
 }
 
 .tile-open:hover,
@@ -945,6 +979,10 @@ p {
 
   .stage-feature {
     padding: 10px;
+  }
+
+  .individual-tile-grid .nav-tile {
+    grid-template-columns: 1fr;
   }
 
   .solo-card-copy h3 {

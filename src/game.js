@@ -116,6 +116,7 @@ export function createInitialState() {
         plan: "work",
         hasBasket: false,
         hasHouse: false,
+        moodHistory: [],
         isNew: true
       }
     ],
@@ -129,7 +130,10 @@ export function cloneState(state) {
     chiefPolicy: cloneChiefPolicy(state.chiefPolicy),
     rolePlans: { ...state.rolePlans },
     lastEvent: { ...state.lastEvent },
-    georgies: state.georgies.map((georgie) => ({ ...georgie })),
+    georgies: state.georgies.map((georgie) => ({
+      ...georgie,
+      moodHistory: [...(georgie.moodHistory ?? [])]
+    })),
     moodHistory: [...(state.moodHistory ?? [])],
     log: [...state.log]
   };
@@ -229,8 +233,7 @@ export function advanceDay(state) {
   }
 
   const food = feedAndUpdateStatuses(next);
-  const happyCount = countStatus(next, "happy");
-  recordMoodTurn(next, happyCount, next.georgies.length);
+  recordGeorgieMoodTurns(next);
 
   if (next.phase !== "village") {
     maybeGrowLittlePopulation(next, notes);
@@ -268,6 +271,14 @@ export function getHappyRate(state) {
   if (state.moodHistory?.length > 0) return getMoodHistoryRate(state.moodHistory);
   if (state.moodTurns === 0) return 1;
   return state.happyTurns / state.moodTurns;
+}
+
+export function getGeorgieHappyRate(georgie) {
+  return getMoodHistoryRate(georgie.moodHistory);
+}
+
+export function getGeorgiesHappyRate(georgies) {
+  return getMoodHistoryRate(getAggregateMoodHistory(georgies));
 }
 
 export function getGrowthHappyRate(state) {
@@ -520,6 +531,7 @@ function maybeGrowLittlePopulation(state, notes) {
     plan: "work",
     hasBasket: false,
     hasHouse: false,
+    moodHistory: [],
     isNew: true
   });
   state.nextId += 1;
@@ -565,6 +577,7 @@ function createSpecialistGeorgie(source, role, fallbackName = ROLE_INFO[role].la
     plan: DEFAULT_WORK_PLAN[role],
     hasBasket: false,
     hasHouse: false,
+    moodHistory: [...(source.moodHistory ?? [])],
     isNew: true
   };
 }
@@ -631,14 +644,40 @@ function summarizeDay(state, result) {
   return `Day ${state.day - 1}: ${pieces.join(", ")}. ${result.food.ate} ate, ${result.food.hungry} went hungry.`;
 }
 
-function recordMoodTurn(state, happy, total) {
-  state.moodHistory = [...(state.moodHistory ?? []), { day: state.day, happy, total }].slice(-HAPPY_RATE_WINDOW_DAYS);
+function recordGeorgieMoodTurns(state) {
+  for (const georgie of state.georgies) {
+    georgie.moodHistory = [
+      ...(georgie.moodHistory ?? []),
+      { day: state.day, happy: georgie.status === "happy" ? 1 : 0, total: 1 }
+    ].slice(-HAPPY_RATE_WINDOW_DAYS);
+  }
+
+  syncAggregateMoodHistory(state);
+}
+
+function syncAggregateMoodHistory(state) {
+  state.moodHistory = getAggregateMoodHistory(state.georgies);
 
   const rolling = getMoodHistoryTotals(state.moodHistory);
   state.happyTurns = rolling.happy;
   state.moodTurns = rolling.total;
   state.growthHappyTurns = rolling.happy;
   state.growthMoodTurns = rolling.total;
+}
+
+function getAggregateMoodHistory(georgies = []) {
+  const entriesByDay = new Map();
+
+  for (const georgie of georgies) {
+    for (const entry of georgie.moodHistory ?? []) {
+      const existing = entriesByDay.get(entry.day) ?? { day: entry.day, happy: 0, total: 0 };
+      existing.happy += entry.happy;
+      existing.total += entry.total;
+      entriesByDay.set(entry.day, existing);
+    }
+  }
+
+  return [...entriesByDay.values()].sort((a, b) => a.day - b.day).slice(-HAPPY_RATE_WINDOW_DAYS);
 }
 
 function getMoodHistoryRate(history) {
