@@ -1,13 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  HAPPY_RATE_WINDOW_DAYS,
   LITTLE_NAMES,
   advanceDay,
   countRole,
   countStatus,
   createInitialState,
   getAppleYield,
-  getEnding,
   getHappyRate,
   getMedianStatus,
   getRoleMoodCounts,
@@ -114,6 +114,23 @@ test("happy rate is based on aggregate Georgie turns", () => {
   assert.equal(getHappyRate(state), 0.5);
 });
 
+test("happy rate retains only the last ten days once history exists", () => {
+  const state = createInitialState();
+  state.apples = 1;
+  state.georgies[0].status = "tired";
+  state.georgies[0].plan = "rest";
+  state.moodHistory = Array.from({ length: HAPPY_RATE_WINDOW_DAYS }, (_, index) => ({
+    day: index + 1,
+    happy: 0,
+    total: 1
+  }));
+
+  const next = advanceDay(state);
+
+  assert.equal(next.moodHistory.length, HAPPY_RATE_WINDOW_DAYS);
+  assert.equal(getHappyRate(next), 1 / HAPPY_RATE_WINDOW_DAYS);
+});
+
 test("farmer yield benefits from baskets while broken farmers cannot use them", () => {
   assert.equal(getAppleYield({ role: "farmer", status: "happy", hasBasket: true }, 0), 5);
   assert.equal(getAppleYield({ role: "farmer", status: "tired", hasBasket: true }, 0), 4);
@@ -218,12 +235,16 @@ test("Chief Henry can levy and distribute baskets and houses", () => {
   assert.equal(next.houses, 0);
 });
 
-test("season ending reports a failure when every Georgie is broken", () => {
+test("all broken Georgies stay in the current stage instead of ending the game", () => {
   const state = createInitialState();
   state.georgies = state.georgies.map((georgie) => ({ ...georgie, status: "broken" }));
 
-  assert.equal(isSeasonOver(state), true);
-  assert.equal(getEnding(state).title, "The pantry went quiet");
+  assert.equal(isSeasonOver(state), false);
+
+  const next = advanceDay(state);
+  assert.equal(next.day, 2);
+  assert.equal(next.phase, "solo");
+  assert.equal(next.georgies[0].status, "tired");
 });
 
 test("the season does not end just because many days have passed", () => {

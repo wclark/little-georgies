@@ -2,6 +2,7 @@ export const GROWTH_HAPPY_RATE_TARGET = 0.5;
 export const SPECIALIST_HAPPY_RATE_TARGET = 0.5;
 export const SPECIALIST_APPLE_TARGET = 30;
 export const SPECIALIST_POPULATION_TARGET = 5;
+export const HAPPY_RATE_WINDOW_DAYS = 10;
 
 export const LITTLE_NAMES = ["Ada", "Mara", "Nell", "Bo", "Ira", "Tuck", "Lio", "Fern", "Sol", "June"];
 
@@ -90,6 +91,7 @@ export function createInitialState() {
     moodTurns: 0,
     growthHappyTurns: 0,
     growthMoodTurns: 0,
+    moodHistory: [],
     baskets: 0,
     houses: 0,
     houseProgress: 0,
@@ -128,6 +130,7 @@ export function cloneState(state) {
     rolePlans: { ...state.rolePlans },
     lastEvent: { ...state.lastEvent },
     georgies: state.georgies.map((georgie) => ({ ...georgie })),
+    moodHistory: [...(state.moodHistory ?? [])],
     log: [...state.log]
   };
 }
@@ -227,10 +230,7 @@ export function advanceDay(state) {
 
   const food = feedAndUpdateStatuses(next);
   const happyCount = countStatus(next, "happy");
-  next.happyTurns += happyCount;
-  next.moodTurns += next.georgies.length;
-  next.growthHappyTurns += happyCount;
-  next.growthMoodTurns += next.georgies.length;
+  recordMoodTurn(next, happyCount, next.georgies.length);
 
   if (next.phase !== "village") {
     maybeGrowLittlePopulation(next, notes);
@@ -265,11 +265,13 @@ export function countRole(state, role) {
 }
 
 export function getHappyRate(state) {
+  if (state.moodHistory?.length > 0) return getMoodHistoryRate(state.moodHistory);
   if (state.moodTurns === 0) return 1;
   return state.happyTurns / state.moodTurns;
 }
 
 export function getGrowthHappyRate(state) {
+  if (state.moodHistory?.length > 0) return getMoodHistoryRate(state.moodHistory);
   if (state.growthMoodTurns === 0) return 1;
   return state.growthHappyTurns / state.growthMoodTurns;
 }
@@ -345,24 +347,13 @@ export function getMedianStatus(georgies) {
 }
 
 export function isSeasonOver(state) {
-  return countStatus(state, "broken") >= state.georgies.length;
+  return false;
 }
 
 export function getEnding(state) {
   const happy = countStatus(state, "happy");
   const broken = countStatus(state, "broken");
   const score = getScore(state);
-
-  if (broken >= state.georgies.length) {
-    return {
-      kicker: "Season failed",
-      title: "The pantry went quiet",
-      body: "Every Georgie broke after going hungry. The next village will need more rest and a deeper apple reserve.",
-      score,
-      happy,
-      broken
-    };
-  }
 
   if (state.phase === "village" && score >= 110 && broken === 0) {
     return {
@@ -532,8 +523,6 @@ function maybeGrowLittlePopulation(state, notes) {
     isNew: true
   });
   state.nextId += 1;
-  state.growthHappyTurns = 0;
-  state.growthMoodTurns = 0;
   notes.push(`${name} joined as a happy Little Georgie.`);
 }
 
@@ -549,8 +538,6 @@ function maybeEnterSpecialistPhase(state, notes) {
   state.commons = 2;
   state.chiefPolicy = getDefaultChiefPolicy();
   state.georgies = createSpecialistGeorgies(state.georgies);
-  state.growthHappyTurns = 0;
-  state.growthMoodTurns = 0;
   notes.push("Henry became chief while the others organized into Farmer and Builder Georgies.");
 }
 
@@ -593,7 +580,7 @@ function getNextEvent(state, result) {
   if (state.phase === "village") {
     return {
       title: "Anonymous specialists",
-      body: "The village now tracks Chief, Farmer, and Builder Georgies by role and mood counts."
+      body: "Food apples feed dinner. Common apples, free baskets, and free houses are stock that Henry can distribute."
     };
   }
 
@@ -607,7 +594,7 @@ function getNextEvent(state, result) {
   if (result.food.hungry > 0) {
     return {
       title: "An empty pantry",
-      body: "Any Little Georgie who cannot eat an apple becomes broken on the next morning."
+      body: "Any Little Georgie who cannot eat an apple becomes broken, but the game keeps going at the same stage."
     };
   }
 
@@ -621,13 +608,13 @@ function getNextEvent(state, result) {
   if (getSpecialistReadiness(state) >= 75) {
     return {
       title: "Almost a village",
-      body: "Enough named Little Georgies, happy turns, and aggregate apples will unlock the three specialist groups."
+      body: "Enough named Little Georgies, rolling happiness, and aggregate apples will unlock the three specialist groups."
     };
   }
 
   return {
     title: "Named Little Georgies",
-    body: "Keep the band fed and happy while the aggregate apple harvest grows."
+    body: "Keep the band fed and happy. Happiness is judged by the last ten days, not the whole run."
   };
 }
 
@@ -642,6 +629,32 @@ function summarizeDay(state, result) {
   if (pieces.length === 0) pieces.push("rested");
 
   return `Day ${state.day - 1}: ${pieces.join(", ")}. ${result.food.ate} ate, ${result.food.hungry} went hungry.`;
+}
+
+function recordMoodTurn(state, happy, total) {
+  state.moodHistory = [...(state.moodHistory ?? []), { day: state.day, happy, total }].slice(-HAPPY_RATE_WINDOW_DAYS);
+
+  const rolling = getMoodHistoryTotals(state.moodHistory);
+  state.happyTurns = rolling.happy;
+  state.moodTurns = rolling.total;
+  state.growthHappyTurns = rolling.happy;
+  state.growthMoodTurns = rolling.total;
+}
+
+function getMoodHistoryRate(history) {
+  const totals = getMoodHistoryTotals(history);
+  if (totals.total === 0) return 1;
+  return totals.happy / totals.total;
+}
+
+function getMoodHistoryTotals(history = []) {
+  return history.reduce(
+    (totals, entry) => ({
+      happy: totals.happy + entry.happy,
+      total: totals.total + entry.total
+    }),
+    { happy: 0, total: 0 }
+  );
 }
 
 function normalizePlanForGeorgie(georgie, plan) {

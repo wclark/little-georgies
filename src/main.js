@@ -1,4 +1,5 @@
 import {
+  HAPPY_RATE_WINDOW_DAYS,
   ROLE_INFO,
   advanceDay,
   countStatus,
@@ -446,6 +447,10 @@ function renderChiefPolicyControls() {
     <div class="chief-policy" aria-label="Chief Henry resource policy">
       ${renderResourcePolicyRow("levy", "Levy")}
       ${renderResourcePolicyRow("distribute", "Distribute")}
+      <p>
+        Levy moves selected resources into common stock. Distribute spends common stock before dinner:
+        apples refill the food pile, baskets go to farmers, and houses go to unhoused specialists.
+      </p>
     </div>
   `;
 }
@@ -477,12 +482,12 @@ function renderResourcePolicyRow(category, label) {
 }
 
 function renderStats() {
-  const stats = [{ label: "Apples", value: state.apples }];
+  const stats = [{ label: state.phase === "village" ? "Food apples" : "Apples", value: state.apples }];
 
   if (state.phase !== "solo") {
     stats.push(
       { label: state.phase === "band" ? "Little Georgies" : "Georgies", value: state.georgies.length },
-      { label: "Happy turns", value: `${Math.round(getHappyRate(state) * 100)}%` },
+      { label: `Happy ${HAPPY_RATE_WINDOW_DAYS}-day`, value: `${Math.round(getHappyRate(state) * 100)}%` },
       { label: "Total apples", value: state.totalApples }
     );
   }
@@ -612,7 +617,7 @@ function getResolveSummary() {
     return "Every Little Georgie follows their plan, then eats if an apple is available.";
   }
 
-  return "Specialists follow their saved plans; broken Georgies do only minimal work, then everyone eats if apples are available.";
+  return "Work happens first. Chief Henry moves selected resources, common apples can refill the food pile, then everyone eats if apples are available.";
 }
 
 function getRoleGeorgies(role) {
@@ -696,7 +701,7 @@ function getPersonStats(georgie) {
 
 function getPersonSummary(georgie) {
   if (georgie.role === "chief") {
-    return "Henry can rest when able, or administer levies and distributions of apples, baskets, and houses.";
+    return "Henry can rest when able, or administer the common stock. Levy collects selected resources; distribute sends them back out before dinner.";
   }
 
   if (georgie.status === "broken") {
@@ -779,6 +784,8 @@ function getDebugState() {
     day: state.day,
     apples: state.apples,
     totalApples: state.totalApples,
+    moodHistoryWindowDays: HAPPY_RATE_WINDOW_DAYS,
+    moodHistory: state.moodHistory,
     happyRate: roundPercent(getHappyRate(state)),
     growthHappyRate: roundPercent(getGrowthHappyRate(state)),
     nextGrowthTarget: getNextGrowthTarget(state),

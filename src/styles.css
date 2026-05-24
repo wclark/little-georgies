@@ -621,6 +621,14 @@ p {
   background: #f7f2df;
 }
 
+.chief-policy p {
+  max-width: none;
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
 .resource-policy-row {
   display: grid;
   grid-template-columns: minmax(70px, auto) 1fr;
