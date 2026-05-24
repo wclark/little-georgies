@@ -293,10 +293,10 @@ function renderVillageRootFeature() {
 
   featureEl.innerHTML = `
     <div class="hierarchy-view">
-      ${renderChiefFocus(chief)}
-      <div class="tile-grid village-tile-grid" aria-label="Village groups">
-        ${renderRoleTile(farmerCounts)}
-        ${renderRoleTile(builderCounts)}
+      <div class="specialist-grid village-specialist-grid" aria-label="Specialist groups">
+        ${renderChiefSpecialistTile(chief)}
+        ${renderRoleSummaryTile(farmerCounts)}
+        ${renderRoleSummaryTile(builderCounts)}
       </div>
     </div>
   `;
@@ -310,16 +310,9 @@ function renderRoleDetailFeature() {
   featureEl.innerHTML = `
     <div class="hierarchy-view">
       ${renderBreadcrumb(`view:root`, "Village")}
-      <article class="focus-panel ${counts.median} ${viewPath.role}">
-        <img src="${getRoleImage(viewPath.role, counts.median)}" alt="${counts.median} ${role.plural}">
-        <div class="focus-copy">
-          <span>${role.plural}</span>
-          <h3>${role.plural}</h3>
-          <p>${role.workSummary}</p>
-          ${renderSummaryStats(getRoleStats(viewPath.role))}
-          ${renderRolePlanControl(viewPath.role, `${role.plural} plan`)}
-        </div>
-      </article>
+      <div class="detail-summary-row" aria-label="${role.plural} summary">
+        ${renderRoleSummaryTile(counts)}
+      </div>
       <div class="tile-grid individual-tile-grid" aria-label="${role.plural}">
         ${georgies.map((georgie) => renderPersonTile(georgie)).join("")}
       </div>
@@ -330,10 +323,12 @@ function renderRoleDetailFeature() {
 function renderPersonDetailFeature() {
   const georgie = state.georgies.find((candidate) => candidate.id === viewPath.id);
   const role = ROLE_INFO[georgie.role];
+  const breadcrumbAction = state.phase === "band" || georgie.role === "chief" ? "view:root" : `view:role:${georgie.role}`;
+  const breadcrumbLabel = state.phase === "band" || georgie.role === "chief" ? "Village" : role.plural;
 
   featureEl.innerHTML = `
     <div class="hierarchy-view">
-      ${renderBreadcrumb(state.phase === "band" ? "view:root" : `view:role:${georgie.role}`, role.plural)}
+      ${renderBreadcrumb(breadcrumbAction, breadcrumbLabel)}
       <article class="focus-panel ${georgie.status} ${georgie.role}">
         <img src="${getGeorgieImage(georgie, "scene")}" alt="${statusLabel[georgie.status]} ${formatGeorgieName(georgie)}">
         <div class="focus-copy">
@@ -349,32 +344,31 @@ function renderPersonDetailFeature() {
   `;
 }
 
-function renderChiefFocus(chief) {
+function renderChiefSpecialistTile(chief) {
   const role = ROLE_INFO.chief;
 
   return `
-    <article class="focus-panel ${chief.status} chief">
-      <img src="${getRoleImage("chief", chief.status)}" alt="${statusLabel[chief.status]} Chief Henry">
-      <div class="focus-copy">
+    <article class="specialist-card ${chief.status} chief">
+      <button class="specialist-open" type="button" data-action="view:person:chief:${chief.id}">
+        <img src="${getGeorgieImage(chief, "scene")}" alt="${statusLabel[chief.status]} Chief Henry">
         <span>${role.label}</span>
-        <h3>Chief Henry</h3>
-        <p>${role.workSummary}</p>
-        ${renderSummaryStats(getPersonStats(chief))}
-        ${renderGeorgiePlanControl(chief, "Chief Henry plan")}
-        ${renderChiefPolicyControls()}
-      </div>
+        <strong>Chief Henry</strong>
+        <small>${statusLabel[chief.status]} - ${getPersonOutput(chief)}</small>
+        <small>${roundPercent(getGeorgieHappyRate(chief))} happy</small>
+      </button>
+      ${renderGeorgiePlanControl(chief, "Chief Henry plan")}
     </article>
   `;
 }
 
-function renderRoleTile(counts) {
+function renderRoleSummaryTile(counts) {
   const role = ROLE_INFO[counts.role];
   const happyRate = roundPercent(getGeorgiesHappyRate(getRoleGeorgies(counts.role)));
 
   return `
-    <article class="nav-tile ${counts.median} ${counts.role}">
-      <button class="tile-open" type="button" data-action="view:role:${counts.role}">
-        <img src="${getRoleImage(counts.role, counts.median, "avatar")}" alt="">
+    <article class="specialist-card ${counts.median} ${counts.role}">
+      <button class="specialist-open" type="button" data-action="view:role:${counts.role}">
+        <img src="${getRoleImage(counts.role, counts.median)}" alt="${statusLabel[counts.median]} ${role.plural}">
         <span>${role.plural}</span>
         <strong>${counts.total} total</strong>
         <small>${counts.happy} happy / ${counts.tired} tired / ${counts.broken} broken</small>

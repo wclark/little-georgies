@@ -334,14 +334,18 @@ p {
 .person-card,
 .specialist-card {
   display: grid;
-  grid-template-rows: minmax(160px, 220px) 1fr auto;
-  gap: 12px;
-  min-height: 360px;
+  gap: 10px;
+  align-content: start;
+  min-height: 0;
   padding: 10px;
 }
 
-.person-card img,
-.specialist-card img {
+.person-card {
+  grid-template-rows: minmax(160px, 220px) 1fr auto;
+  min-height: 360px;
+}
+
+.person-card img {
   width: 100%;
   height: 100%;
   min-height: 160px;
@@ -349,6 +353,59 @@ p {
   object-fit: cover;
   object-position: center top;
   background: #e9ecd4;
+}
+
+.specialist-open {
+  display: grid;
+  grid-template-rows: minmax(145px, 178px) auto auto auto auto;
+  gap: 6px;
+  width: 100%;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--ink);
+  text-align: left;
+  background: transparent;
+}
+
+.specialist-open img {
+  width: 100%;
+  height: 100%;
+  min-height: 145px;
+  border-radius: 6px;
+  object-fit: cover;
+  object-position: center top;
+  background: #e9ecd4;
+}
+
+.specialist-open span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.specialist-open strong {
+  font-size: 1.18rem;
+  line-height: 1.08;
+}
+
+.specialist-open small {
+  color: var(--muted);
+  line-height: 1.25;
+}
+
+.specialist-card .segmented-control {
+  min-height: 34px;
+}
+
+.specialist-card .segmented-control button {
+  min-width: 0;
+}
+
+.detail-summary-row {
+  display: grid;
+  grid-template-columns: minmax(0, 360px);
 }
 
 .person-copy,
@@ -561,6 +618,8 @@ p {
 
 .tile-open:hover,
 .tile-open:focus-visible,
+.specialist-open:hover,
+.specialist-open:focus-visible,
 .breadcrumb-row button:hover,
 .breadcrumb-row button:focus-visible {
   border-color: var(--leaf);
