@@ -37,12 +37,14 @@ test results below are from the earlier pipeline implementation, not a new run.
   The owner approved signing setup. Apple issued a matching Distribution
   certificate, and the active `Little Georgies App Store 2026` profile is scoped
   to this app. Both expire on 2027-09-22. The password-protected P12 is ready
-  under `%LOCALAPPDATA%/LittleGeorgies/Signing`, outside Git, and was reopened
-  locally to verify its matching private key. The original key and P12 password
+  outside Git, and was reopened locally to verify its matching private key.
+  The original key and P12 password
   are stored with Windows DPAPI CurrentUser protection, with exactly one
   owner-only directory access rule. No plaintext password file was created.
-  The profile download and Unity credential upload remain pending. Actual
-  signing, upload automation, and TestFlight device acceptance are unverified.
+  The downloaded profile's CMS signature, app ID, certificate, expiry, and
+  non-debug distribution settings are verified. Unity credential upload remains
+  pending manual file/password entry. Actual signing, upload automation, and
+  TestFlight device acceptance are unverified.
 
 ## Windows: One Command
 
@@ -167,11 +169,26 @@ mode. Keep automatic and scheduled triggers off. Saving a target does not
 verify signing, compilation, or device behavior.
 
 The owner approved this signing identity and Unity storage on 2026-09-22.
-Local files are `LittleGeorgies-Distribution.p12`, `distribution.cer`,
-`private-key.dpapi`, and `p12-password.dpapi` in the protected signing directory.
+The owner could not access the agent-created AppData path from their PowerShell
+session. The verified owner-only handoff directory is now
+`%USERPROFILE%/Documents/LittleGeorgies-Signing`. It contains only the Unity
+handoff files: `LittleGeorgies-Distribution.p12`,
+`LittleGeorgies-AppStore.mobileprovision`, and `p12-password.dpapi`.
+The original private-key backup was not copied to Desktop or Documents.
 DPAPI recovery requires the same Windows account; this is not yet an independent
 credential backup. Do not print the password into logs/chat, create a plaintext
 password file, or move private signing material into the repository.
+
+For manual Unity password entry, the owner can run this in their own Windows
+PowerShell session. It decrypts directly to the clipboard, without printing the
+password or writing a plaintext file. Paste only into Unity's P12 password field,
+then clear the clipboard and any clipboard-history entry containing the password.
+Do not run this in a shared session or send the result to chat.
+
+```powershell
+Add-Type -AssemblyName System.Security
+[Text.Encoding]::UTF8.GetString([Security.Cryptography.ProtectedData]::Unprotect([IO.File]::ReadAllBytes("$env:USERPROFILE\Documents\LittleGeorgies-Signing\p12-password.dpapi"), $null, 'CurrentUser')) | Set-Clipboard
+```
 
 Follow [Unity's signing guide](https://docs.unity.com/en-us/build-automation/sign-build-artifacts/sign-an-ios-application)
 and [Apple's upload requirements](https://developer.apple.com/help/app-store-connect/manage-builds/upload-builds).

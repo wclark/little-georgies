@@ -28,8 +28,16 @@
   certificate and private key. The random password is stored only in Windows
   DPAPI-encrypted form. Verified the signing directory's ACL has exactly one
   full-control entry for the owner, no inherited entries, and the same owner.
-  No plaintext password file was created. The browser blocked automated profile
-  download; it awaits the owner. No signing credential has reached Unity yet.
+  No plaintext password file was created. After the owner downloaded the profile,
+  verified its CMS signature, exact app ID, matching certificate, future expiry,
+  disabled debugging, and absence of ad-hoc/all-device provisioning. Kept a copy
+  in the protected signing directory. Unity file upload automation could not open
+  its picker; manual file/password entry is pending, and the target is unsaved.
+- The owner's PowerShell could not resolve the AppData path. Prepared an
+  owner-only `Documents/LittleGeorgies-Signing` handoff folder with only the
+  encrypted P12, profile, and DPAPI-encrypted password, verifying file hashes and
+  the exact ACL. The private-key backup was not copied. No plaintext secret was
+  printed, written, or added to Git.
 - Static inspection only in this setup-only follow-up: no local compilation,
   model test run, Unity/player build, runtime smoke run, cloud build, TestFlight
   upload, or app release. Earlier test results below were not rerun.
