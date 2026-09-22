@@ -7,11 +7,13 @@
 - Removed automatic triggers from the new model-check workflow. It accepts
   manual dispatch only, with an explicit `run_checks` input defaulting to false.
   GitHub returned no runs for the setup branch after the push.
-- Prepared the Unity Cloud iOS target: exact Unity 6000.6.0f1, Xcode 26.5.0,
+- Saved the Unity Cloud iOS target `ios-testflight-manual` using only
+  **Save configuration**: exact Unity 6000.6.0f1, Xcode 26.5.0,
   macOS Tahoe, Apple-Silicon, project folder `unity`, and `CloudBuild.PreExport`.
-  Auto-build and repeating schedules are off. **The target is not saved**:
-  Save configuration requires a signing credential. The settings are recorded
-  in `BUILDING.md` so the draft can be restored.
+  Reopened the saved target and verified its branch, scene, environment values,
+  and signing credential. Auto-build, auto-cancel, and repeating schedules are
+  off. Unity's project build history reports no builds, with 0 total rows.
+  The settings and target link are recorded in `BUILDING.md`.
 - Verified active Apple Developer membership and registered the explicit
   `org.georgist.littlegeorgies` App ID. No optional capabilities were selected.
   The owner accepted the separate App Store Connect agreement. Created app
@@ -32,12 +34,16 @@
   verified its CMS signature, exact app ID, matching certificate, future expiry,
   disabled debugging, and absence of ad-hoc/all-device provisioning. Kept a copy
   in the protected signing directory. Unity file upload automation could not open
-  its picker; manual file/password entry is pending, and the target is unsaved.
+  its picker, so the owner selected both files and entered the password manually.
 - The owner's PowerShell could not resolve the AppData path. Prepared an
   owner-only `Documents/LittleGeorgies-Signing` handoff folder with only the
   encrypted P12, profile, and DPAPI-encrypted password, verifying file hashes and
   the exact ACL. The private-key backup was not copied. No plaintext secret was
   printed, written, or added to Git.
+- Saved Unity credential `Little Georgies App Store 2026`. After saving the
+  target, Unity displays the correct bundle ID, App Store profile type, matching
+  Apple Distribution certificate, and 2027-09-22 expiries. Actual artifact signing
+  is still untested. No TestFlight upload integration is configured.
 - Static inspection only in this setup-only follow-up: no local compilation,
   model test run, Unity/player build, runtime smoke run, cloud build, TestFlight
   upload, or app release. Earlier test results below were not rerun.

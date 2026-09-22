@@ -32,19 +32,23 @@ test results below are from the earlier pipeline implementation, not a new run.
   agreement. [Little Georgies](https://appstoreconnect.apple.com/apps/6814987738/distribution)
   now exists there as app `6814987738` (iOS, English US, SKU `little-georgies`),
   in Prepare for Submission, with no uploaded build or submitted release.
-- The iOS target form is prepared with the settings below, but **not saved**:
-  Unity requires a signing credential before it accepts Save configuration.
-  The owner approved signing setup. Apple issued a matching Distribution
-  certificate, and the active `Little Georgies App Store 2026` profile is scoped
-  to this app. Both expire on 2027-09-22. The password-protected P12 is ready
-  outside Git, and was reopened locally to verify its matching private key.
+- The [iOS TestFlight - Manual target](https://cloud.unity.com/organizations/1375991457548/projects/22a9185f-609f-4365-b527-d62132adc8a8/cloud-build/setup/buildTarget/ios-testflight-manual)
+  is saved as `ios-testflight-manual`, using **Save configuration**, not
+  Save and build. Its saved settings and signing credential were reopened and
+  verified. Auto-build, auto-cancel, and repeating schedules are off; Unity's
+  project build history is empty.
+- With owner approval, Unity now stores the `Little Georgies App Store 2026`
+  signing credential. The saved credential displays the correct app bundle ID,
+  App Store profile type, and matching Apple Distribution certificate. Both
+  expire on 2027-09-22. The password-protected P12 was reopened locally to verify
+  its matching private key before upload.
   The original key and P12 password
   are stored with Windows DPAPI CurrentUser protection, with exactly one
   owner-only directory access rule. No plaintext password file was created.
   The downloaded profile's CMS signature, app ID, certificate, expiry, and
-  non-debug distribution settings are verified. Unity credential upload remains
-  pending manual file/password entry. Actual signing, upload automation, and
-  TestFlight device acceptance are unverified.
+  non-debug distribution settings are verified. The owner entered the password
+  and selected both files manually. Actual build signing and TestFlight device
+  acceptance are unverified; upload automation is not configured.
 
 ## Windows: One Command
 
@@ -105,8 +109,8 @@ future action, not part of setup-only publication.
 
 Use the existing Unity Cloud project and saved read-only SSH connection above.
 The Unity directory is `unity`, not the repository root. The following settings
-were selected in the cloud UI on 2026-09-22. They are a recovery recipe for the
-unsaved draft, not evidence of a saved target or successful build.
+were saved and reopened in the cloud UI on 2026-09-22. They are also a recovery
+recipe for target `ios-testflight-manual`, not evidence of a successful build.
 Do not enable paid services or a new cloud plan without owner approval.
 
 | Setting | Value |
@@ -123,6 +127,7 @@ Do not enable paid services or a new cloud plan without owner approval.
 | Pre-export method | `CloudBuild.PreExport` |
 | Development build | Off for the signed TestFlight target |
 | Signing/export | Apple Distribution, App Store Connect distribution |
+| Saved credential | `Little Georgies App Store 2026` |
 | Auto-build / repeating schedule | Both off |
 | Auto-cancel | Off |
 | Upload XCArchive / Fastlane upload hooks | Off / empty |
@@ -134,7 +139,7 @@ version detection off. Do not silently substitute a different editor. Xcode
 [Apple's current upload requirements](https://developer.apple.com/news/upcoming-requirements/).
 Recheck SDK requirements before the first actual upload.
 
-Set non-secret target environment variables:
+Saved non-secret target environment variables and the cloud-provided number:
 
 - `LG_BUNDLE_ID`: the registered App ID, `org.georgist.littlegeorgies`.
 - `LG_VERSION`: marketing version, initially `0.1.0`.
@@ -155,17 +160,17 @@ Hook configuration follows [Unity's build-script documentation](https://docs.uni
 The Developer membership, bundle ID, and App Store Connect app record are ready.
 The new App Store record has Apple's initial 1.0 store-version draft; the first
 TestFlight marketing version is planned as 0.1.0. Store submission is separate.
-For the first signed build, put the distribution certificate **with
+Unity's saved signing credential contains the distribution certificate **with
 its private key** (`.p12`), its password, and the matching App Store distribution
-provisioning profile in Unity's signing credential storage. A certificate alone
-without its private key is insufficient. Never paste keys into chat or commit
-them. Ignore rules cover `.p12`, `.p8`, and `.mobileprovision` files.
+provisioning profile. A certificate alone without its private key is insufficient.
+Never paste keys into chat or commit them. Ignore rules cover `.p12`, `.p8`, and
+`.mobileprovision` files.
 
 Obtain explicit owner approval before creating a signing identity or granting
 Unity access to its private key. Store local signing material outside Git and
-restrict access to the owner. Once a real credential set is available, save the
-target using **Save configuration**, never **Save and build** during setup-only
-mode. Keep automatic and scheduled triggers off. Saving a target does not
+restrict access to the owner. The target was saved using **Save configuration**;
+never use **Save and build** during setup-only mode. Keep automatic and
+scheduled triggers off. Saving a target does not
 verify signing, compilation, or device behavior.
 
 The owner approved this signing identity and Unity storage on 2026-09-22.
