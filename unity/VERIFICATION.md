@@ -20,8 +20,16 @@
 - The owner approved Apple Distribution signing setup and Unity credential
   storage. Generated the RSA key and public CSR outside Git, protecting the
   private key with Windows DPAPI CurrentUser and an owner-only directory ACL.
-  Apple certificate issuance and the provisioning profile are pending CSR
-  upload; no signing credential has reached Unity yet.
+  After the owner uploaded the CSR and downloaded the certificate, verified
+  that its RSA public key matches the original request. Apple issued an active
+  App Store provisioning profile scoped to `org.georgist.littlegeorgies` and
+  this distribution certificate; both expire on 2027-09-22.
+- Created and locally reopened a password-protected P12 containing the matching
+  certificate and private key. The random password is stored only in Windows
+  DPAPI-encrypted form. Verified the signing directory's ACL has exactly one
+  full-control entry for the owner, no inherited entries, and the same owner.
+  No plaintext password file was created. The browser blocked automated profile
+  download; it awaits the owner. No signing credential has reached Unity yet.
 - Static inspection only in this setup-only follow-up: no local compilation,
   model test run, Unity/player build, runtime smoke run, cloud build, TestFlight
   upload, or app release. Earlier test results below were not rerun.

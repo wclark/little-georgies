@@ -34,12 +34,15 @@ test results below are from the earlier pipeline implementation, not a new run.
   in Prepare for Submission, with no uploaded build or submitted release.
 - The iOS target form is prepared with the settings below, but **not saved**:
   Unity requires a signing credential before it accepts Save configuration.
-  The owner approved signing setup. A 2048-bit RSA key and public CSR are ready
-  under `%LOCALAPPDATA%/LittleGeorgies/Signing`, outside Git. The private key is
-  DPAPI-encrypted for the owner's Windows account, and the directory grants
-  access only to that account. The Apple certificate and provisioning profile
-  are pending upload of the CSR. Signing, upload automation, and TestFlight
-  device acceptance remain unverified.
+  The owner approved signing setup. Apple issued a matching Distribution
+  certificate, and the active `Little Georgies App Store 2026` profile is scoped
+  to this app. Both expire on 2027-09-22. The password-protected P12 is ready
+  under `%LOCALAPPDATA%/LittleGeorgies/Signing`, outside Git, and was reopened
+  locally to verify its matching private key. The original key and P12 password
+  are stored with Windows DPAPI CurrentUser protection, with exactly one
+  owner-only directory access rule. No plaintext password file was created.
+  The profile download and Unity credential upload remain pending. Actual
+  signing, upload automation, and TestFlight device acceptance are unverified.
 
 ## Windows: One Command
 
@@ -162,6 +165,13 @@ restrict access to the owner. Once a real credential set is available, save the
 target using **Save configuration**, never **Save and build** during setup-only
 mode. Keep automatic and scheduled triggers off. Saving a target does not
 verify signing, compilation, or device behavior.
+
+The owner approved this signing identity and Unity storage on 2026-09-22.
+Local files are `LittleGeorgies-Distribution.p12`, `distribution.cer`,
+`private-key.dpapi`, and `p12-password.dpapi` in the protected signing directory.
+DPAPI recovery requires the same Windows account; this is not yet an independent
+credential backup. Do not print the password into logs/chat, create a plaintext
+password file, or move private signing material into the repository.
 
 Follow [Unity's signing guide](https://docs.unity.com/en-us/build-automation/sign-build-artifacts/sign-an-ios-application)
 and [Apple's upload requirements](https://developer.apple.com/help/app-store-connect/manage-builds/upload-builds).
