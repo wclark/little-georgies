@@ -17,15 +17,29 @@ test results below are from the earlier pipeline implementation, not a new run.
 - Organization: `1375991457548`; project: `22a9185f-609f-4365-b527-d62132adc8a8`.
 - Audience: general audience, not primarily directed at children, confirmed by the owner.
 - Local Windows pipeline passed; see `VERIFICATION.md` and `Artifacts/pipeline.json`.
-- GitHub workflow is authored but not yet published/run remotely. Unity source
-  is still local-only pending permission to publish it on a new repository branch.
+- Unity source and the dormant workflow are published on
+  [`setup/unity-ios-pipeline`](https://github.com/wclark/little-georgies/tree/setup/unity-ios-pipeline),
+  starting at commit `ead5042`. `main` and the website deployment are unchanged.
+  GitHub reported no workflow runs on this branch after publication.
 - Build Automation's free tier is available. After anonymous HTTPS failed,
   the owner approved a repository-only SSH deploy key. GitHub key `164131885`
   (`Unity Build Automation (read-only)`) is verified `read_only: true`; Unity
   saved `git@github.com:wclark/little-georgies.git` successfully. No account-wide
   OAuth access or write access was granted.
-- Cloud build target, Apple signing, upload automation,
-  and TestFlight device acceptance are not configured/verified yet.
+- Apple Developer membership is active. The explicit App ID
+  `org.georgist.littlegeorgies` is registered as Little Georgies. No optional
+  capabilities were enabled. The owner accepted App Store Connect's separate
+  agreement. [Little Georgies](https://appstoreconnect.apple.com/apps/6814987738/distribution)
+  now exists there as app `6814987738` (iOS, English US, SKU `little-georgies`),
+  in Prepare for Submission, with no uploaded build or submitted release.
+- The iOS target form is prepared with the settings below, but **not saved**:
+  Unity requires a signing credential before it accepts Save configuration.
+  The owner approved signing setup. A 2048-bit RSA key and public CSR are ready
+  under `%LOCALAPPDATA%/LittleGeorgies/Signing`, outside Git. The private key is
+  DPAPI-encrypted for the owner's Windows account, and the directory grants
+  access only to that account. The Apple certificate and provisioning profile
+  are pending upload of the CSR. Signing, upload automation, and TestFlight
+  device acceptance remain unverified.
 
 ## Windows: One Command
 
@@ -78,35 +92,46 @@ owner authorizes running CI, automatic triggers and required merge checks can
 be enabled separately. Do not give public pull requests a self-hosted Windows
 runner or Apple credentials.
 
+The workflow is currently only on the setup branch. GitHub's manual-dispatch
+interface requires the workflow on the default branch; merging it is a separate
+future action, not part of setup-only publication.
+
 ## Unity Build Automation: First iOS Target
 
-Use the existing Unity Cloud project above, then connect this GitHub repository using
-read-only repository access where supported. The Unity directory is `unity`,
-not the repository root. Start with manual cloud triggers to control cost.
+Use the existing Unity Cloud project and saved read-only SSH connection above.
+The Unity directory is `unity`, not the repository root. The following settings
+were selected in the cloud UI on 2026-09-22. They are a recovery recipe for the
+unsaved draft, not evidence of a saved target or successful build.
 Do not enable paid services or a new cloud plan without owner approval.
 
 | Setting | Value |
 | --- | --- |
-| Repository | `https://github.com/wclark/little-georgies.git` |
-| Branch | The reviewed branch containing the Unity project |
+| Target name | `iOS TestFlight - Manual` |
+| Repository | `git@github.com:wclark/little-georgies.git` |
+| Branch | `setup/unity-ios-pipeline` |
 | Project subdirectory | `unity` |
 | Platform | iOS, device build (not Simulator) |
 | Unity | `6000.6.0f1`, matching `ProjectVersion.txt` |
-| Builder | macOS with a currently Apple-supported Xcode/iOS SDK |
+| Builder | macOS Tahoe, Xcode `26.5.0`, Apple-Silicon editor |
+| Machine | STANDARD: 4 vCPU, 16 GB RAM, 512 GB storage |
 | Scene | `Assets/Scenes/Settlement.unity` |
 | Pre-export method | `CloudBuild.PreExport` |
 | Development build | Off for the signed TestFlight target |
 | Signing/export | Apple Distribution, App Store Connect distribution |
-| Trigger | Manual until the first device build is verified |
+| Auto-build / repeating schedule | Both off |
+| Auto-cancel | Off |
+| Upload XCArchive / Fastlane upload hooks | Off / empty |
+| Unity Test Framework option | Off; shared model checks run in the pre-export hook |
 
-Confirm that the exact Unity version is available in the cloud. If not, choose
-one supported version for both local and cloud builds and re-run Windows tests;
-do not silently substitute a different editor. Record the chosen Xcode version
-after checking Apple's current upload requirements.
+The exact Unity version was available and selected explicitly, with automatic
+version detection off. Do not silently substitute a different editor. Xcode
+26.5.0 meets the Xcode 26-or-later floor in
+[Apple's current upload requirements](https://developer.apple.com/news/upcoming-requirements/).
+Recheck SDK requirements before the first actual upload.
 
 Set non-secret target environment variables:
 
-- `LG_BUNDLE_ID`: the exact registered App ID, proposed `org.georgist.littlegeorgies`.
+- `LG_BUNDLE_ID`: the registered App ID, `org.georgist.littlegeorgies`.
 - `LG_VERSION`: marketing version, initially `0.1.0`.
 - `BUILD_NUMBER`: provided by Build Automation; never reuse an uploaded number
   for the same version. Coordinate numbering if a cloud target is recreated.
@@ -122,13 +147,21 @@ Hook configuration follows [Unity's build-script documentation](https://docs.uni
 
 ## Apple Signing and TestFlight
 
-The account owner must complete Apple activation/agreements and confirm the
-team. Register the bundle ID and create the Little Georgies App Store Connect
-record. For the first signed build, put the distribution certificate **with
+The Developer membership, bundle ID, and App Store Connect app record are ready.
+The new App Store record has Apple's initial 1.0 store-version draft; the first
+TestFlight marketing version is planned as 0.1.0. Store submission is separate.
+For the first signed build, put the distribution certificate **with
 its private key** (`.p12`), its password, and the matching App Store distribution
 provisioning profile in Unity's signing credential storage. A certificate alone
 without its private key is insufficient. Never paste keys into chat or commit
 them. Ignore rules cover `.p12`, `.p8`, and `.mobileprovision` files.
+
+Obtain explicit owner approval before creating a signing identity or granting
+Unity access to its private key. Store local signing material outside Git and
+restrict access to the owner. Once a real credential set is available, save the
+target using **Save configuration**, never **Save and build** during setup-only
+mode. Keep automatic and scheduled triggers off. Saving a target does not
+verify signing, compilation, or device behavior.
 
 Follow [Unity's signing guide](https://docs.unity.com/en-us/build-automation/sign-build-artifacts/sign-an-ios-application)
 and [Apple's upload requirements](https://developer.apple.com/help/app-store-connect/manage-builds/upload-builds).

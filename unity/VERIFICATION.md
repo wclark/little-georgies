@@ -1,6 +1,34 @@
 # Verification
 
-## 2026-09-22: Build Pipeline Foundation
+## 2026-09-22: Setup-Only Publication
+
+- With owner approval, published the Unity project and pipeline on
+  `setup/unity-ios-pipeline` at `ead5042`; did not merge or change `main`.
+- Removed automatic triggers from the new model-check workflow. It accepts
+  manual dispatch only, with an explicit `run_checks` input defaulting to false.
+  GitHub returned no runs for the setup branch after the push.
+- Prepared the Unity Cloud iOS target: exact Unity 6000.6.0f1, Xcode 26.5.0,
+  macOS Tahoe, Apple-Silicon, project folder `unity`, and `CloudBuild.PreExport`.
+  Auto-build and repeating schedules are off. **The target is not saved**:
+  Save configuration requires a signing credential. The settings are recorded
+  in `BUILDING.md` so the draft can be restored.
+- Verified active Apple Developer membership and registered the explicit
+  `org.georgist.littlegeorgies` App ID. No optional capabilities were selected.
+  The owner accepted the separate App Store Connect agreement. Created app
+  `6814987738`, Little Georgies (iOS, English US, SKU `little-georgies`), and
+  verified its Prepare for Submission status in the Apps list.
+- The owner approved Apple Distribution signing setup and Unity credential
+  storage. Generated the RSA key and public CSR outside Git, protecting the
+  private key with Windows DPAPI CurrentUser and an owner-only directory ACL.
+  Apple certificate issuance and the provisioning profile are pending CSR
+  upload; no signing credential has reached Unity yet.
+- Static inspection only in this setup-only follow-up: no local compilation,
+  model test run, Unity/player build, runtime smoke run, cloud build, TestFlight
+  upload, or app release. Earlier test results below were not rerun.
+- No website/S3 deployment or desktop executable changed. The unrelated root
+  README edit remains outside the setup commit.
+
+## Earlier 2026-09-22: Build Pipeline Foundation
 
 - Created the Little Georgies Unity Cloud project for the owner's confirmed
   general-audience classification. No paid service, signing credential, app
