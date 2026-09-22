@@ -2,3 +2,28 @@ dist/
 .DS_Store
 Thumbs.db
 *.log
+
+# Unity prototype
+unity/Library/
+unity/Temp/
+unity/Obj/
+unity/Logs/
+unity/UserSettings/
+unity/Builds/
+unity/Artifacts/
+unity/*.csproj
+unity/*.sln*
+unity/.vs/
+/unity/Assets/Plugins/AuctionSolver/**/*.dll
+unity/.tools/
+unity/tests/**/bin/
+unity/tests/**/obj/
+
+# Signing material stays in Apple/Unity secret storage, never source control.
+*.p12
+*.p8
+*.mobileprovision
+.secrets/
+.env.local
+unity/Assets/Resources/BuildInfo.json
+unity/Assets/Resources/BuildInfo.json.meta

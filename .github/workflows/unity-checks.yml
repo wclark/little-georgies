@@ -1,0 +1,35 @@
+name: Unity model checks
+on:
+  workflow_dispatch:
+    inputs:
+      run_checks:
+        description: 'Explicitly authorize compiling and running the model checks'
+        type: boolean
+        required: true
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: unity-models-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  models:
+    if: ${{ inputs.run_checks == true }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Test actual game models without Unity or native plugins
+        run: dotnet run --project unity/tests/CoreChecks --configuration Release -- unity/Artifacts/core-checks.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: core-checks-${{ matrix.os }}
+          path: unity/Artifacts/core-checks.json
+          if-no-files-found: error

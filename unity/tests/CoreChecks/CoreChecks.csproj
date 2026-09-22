@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <LangVersion>9.0</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Assets/Scripts/Society.cs" Link="Game/Society.cs" />
+    <Compile Include="../../Assets/Scripts/Economy/LandAuction.cs" Link="Game/LandAuction.cs" />
+    <Compile Include="../../Assets/Scripts/Economy/AuctionTaxes.cs" Link="Game/AuctionTaxes.cs" />
+    <Compile Include="../../Assets/Scripts/Economy/IndividualLandValues.cs" Link="Game/IndividualLandValues.cs" />
+    <Compile Include="../../Assets/ThirdParty/HungarianAlgorithm/HungarianAlgorithm.cs" Link="ThirdParty/HungarianAlgorithm.cs" />
+    <Compile Include="../../Assets/Editor/Checks/*.cs" Link="Checks/%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

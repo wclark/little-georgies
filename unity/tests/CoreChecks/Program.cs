@@ -1,0 +1,23 @@
+using System;
+using System.IO;
+using System.Text.Json;
+
+internal static class Program
+{
+    static int Main(string[] args)
+    {
+        string output = args.Length > 0 ? args[0] : "core-checks.json";
+        var started = DateTime.UtcNow;
+        int society = 0, auction = 0;
+        string failure = null;
+        try { society = SocietyChecks.Validate(); auction = PortableAuctionChecks.Validate(); }
+        catch (Exception error) { failure = error.ToString(); }
+        var report = new { passed = failure == null, society, auction, total = society + auction,
+            seed = 22092026, startedUtc = started, elapsedMs = (DateTime.UtcNow - started).TotalMilliseconds,
+            runtime = Environment.Version.ToString(), failure };
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(output)));
+        File.WriteAllText(output, JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine(failure == null ? $"PASS: {society} society + {auction} auction checks ({society + auction} total)." : failure);
+        return failure == null ? 0 : 1;
+    }
+}
