@@ -5,13 +5,13 @@ gates: portable model tests, a Windows player with runtime checks, and a signed
 iOS build followed by a real TestFlight device test. Passing the first two does
 not establish that the third works.
 
-## Current Setup (2026-09-22)
+## Current Setup (2026-09-23)
 
-**Setup-only mode:** the owner requested no builds or test compilations.
-Do not run local build/test scripts, dispatch GitHub checks, trigger Unity Cloud
-builds, or upload a TestFlight artifact until explicitly authorized. Auto-build,
-scheduled builds, and automatic GitHub triggers must stay off. The successful
-test results below are from the earlier pipeline implementation, not a new run.
+The owner has now authorized a manual signed iOS build and TestFlight delivery
+of the dossier revision for their iPad. This supersedes setup-only mode for this
+test build; it does not authorize a public App Store submission or release.
+Auto-build, scheduled builds, and automatic GitHub triggers must stay off.
+`VERIFICATION.md` distinguishes the local revision checks from earlier runs.
 
 - Unity Cloud project: [Little Georgies](https://cloud.unity.com/organizations/1375991457548/projects/22a9185f-609f-4365-b527-d62132adc8a8).
 - Organization: `1375991457548`; project: `22a9185f-609f-4365-b527-d62132adc8a8`.
@@ -76,7 +76,7 @@ The gate fails on model assertions, compilation/build failure, missing/failing
 runtime reports, or native solver DLLs accidentally included in the player.
 Runtime tests use isolated smoke save folders, not the user's scenario.
 `unity/Artifacts/pipeline.json` records the source revision, assembly hash, build
-identity, model results, and all six runtime reports. PNGs and logs are beside
+identity, model results, and all nine runtime reports. PNGs and logs are beside
 the reports. Every build embeds its identity in `Resources/BuildInfo.json` and
 logs it at startup. Local dirty revisions are labeled as such.
 
@@ -147,10 +147,10 @@ Saved non-secret target environment variables and the cloud-provided number:
   for the same version. Coordinate numbering if a cloud target is recreated.
 
 The pre-export hook requires a bundle ID and build number, configures IL2CPP,
-iPhone/iPad, landscape rotation, and iOS 15 minimum, prepares the bootstrap scene,
+iPhone/iPad, full-screen landscape rotation, and iOS 15 minimum, prepares the bootstrap scene,
 runs shared model and migration checks, then embeds revision/build metadata.
-Cloud test builds open directly in Economy Admin. Windows normal builds still
-open in the orchard. Windows-native plugins are restricted to Windows Editor
+New builds open the dossier-based settlement on both platforms. The separate
+Economy Admin remains available inside it. Windows-native plugins are restricted to Windows Editor
 and cannot be shipped in the iOS player. The cloud build needs no OR-Tools restore.
 
 Hook configuration follows [Unity's build-script documentation](https://docs.unity.com/en-us/build-automation/advanced-build-configuration/run-custom-scripts-during-the-build-process).

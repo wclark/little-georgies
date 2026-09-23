@@ -1,10 +1,12 @@
-param([switch]$AuctionOnly, [string]$Exe)
+param([switch]$AuctionOnly, [switch]$DossierOnly, [string]$Exe)
 $ErrorActionPreference = 'Stop'
 $project = Split-Path $PSScriptRoot -Parent
 if (-not $Exe) { $Exe = Join-Path $project 'Builds\Windows\LittleGeorgies.exe' }
 if (-not (Test-Path -LiteralPath $exe)) { throw 'Build the Windows player first.' }
 $sizes = @(@{Name='Desktop'; W=1600; H=900; Mode='-lg-village -lg-smoke'}, @{Name='TabletAspect'; W=1280; H=960; Mode='-lg-village -lg-smoke'}, @{Name='OpeningDesktop'; W=1600; H=900; Mode='-lg-opening-smoke'}, @{Name='OpeningTablet'; W=1280; H=960; Mode='-lg-opening-smoke'}, @{Name='AuctionDesktop'; W=1600; H=900; Mode='-lg-auction-smoke'}, @{Name='AuctionTablet'; W=1280; H=960; Mode='-lg-auction-smoke'})
 if ($AuctionOnly) { $sizes = @($sizes | Where-Object { $_.Name -like 'Auction*' }) }
+$dossiers = @(@{Name='DossierDesktop'; W=1600; H=900; Mode='-lg-dossier-smoke'}, @{Name='DossierTablet'; W=1280; H=960; Mode='-lg-dossier-smoke'}, @{Name='DossierWide'; W=1600; H=740; Mode='-lg-dossier-smoke'})
+if ($DossierOnly) { $sizes = $dossiers } elseif (-not $AuctionOnly) { $sizes += $dossiers }
 foreach ($size in $sizes) {
     $folder = Join-Path $project "Artifacts\$($size.Name)"
     New-Item -ItemType Directory -Path $folder -Force | Out-Null

@@ -11,6 +11,7 @@
     <Compile Include="../../Assets/Scripts/Economy/LandAuction.cs" Link="Game/LandAuction.cs" />
     <Compile Include="../../Assets/Scripts/Economy/AuctionTaxes.cs" Link="Game/AuctionTaxes.cs" />
     <Compile Include="../../Assets/Scripts/Economy/IndividualLandValues.cs" Link="Game/IndividualLandValues.cs" />
+    <Compile Include="../../Assets/Scripts/Economy/SettlementEconomy.cs" Link="Game/SettlementEconomy.cs" />
     <Compile Include="../../Assets/ThirdParty/HungarianAlgorithm/HungarianAlgorithm.cs" Link="ThirdParty/HungarianAlgorithm.cs" />
     <Compile Include="../../Assets/Editor/Checks/*.cs" Link="Checks/%(Filename)%(Extension)" />
   </ItemGroup>

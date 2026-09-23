@@ -35,7 +35,7 @@ try {
         assemblySha256 = (Get-FileHash -LiteralPath $assembly -Algorithm SHA256).Hash
         modelChecks = Get-Content -LiteralPath (Join-Path $project 'Artifacts/core-checks.json') -Raw | ConvertFrom-Json
         build = Get-Content -LiteralPath (Join-Path $root 'build-info.json') -Raw | ConvertFrom-Json
-        smoke = @('Desktop', 'TabletAspect', 'OpeningDesktop', 'OpeningTablet', 'AuctionDesktop', 'AuctionTablet') |
+        smoke = @('Desktop', 'TabletAspect', 'OpeningDesktop', 'OpeningTablet', 'AuctionDesktop', 'AuctionTablet', 'DossierDesktop', 'DossierTablet', 'DossierWide') |
             ForEach-Object { Get-Content -LiteralPath (Join-Path $project "Artifacts/$_/smoke.json") -Raw | ConvertFrom-Json }
     }
     $manifest | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath (Join-Path $project 'Artifacts/pipeline.json') -Encoding utf8

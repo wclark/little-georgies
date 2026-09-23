@@ -8,6 +8,12 @@ namespace LittleGeorgies
     public enum Mood { Broken, Tired, Happy }
     public enum Job { Harvest, Rest, Administer, Baskets, Houses }
     public enum FoodRule { SharedStore, PersonalHarvest }
+    public enum WorkPlan { Policy, Work, Rest, Baskets, Houses }
+
+    public sealed class HarvestSettlement
+    {
+        public int Value, Tax, Rent;
+    }
 
     [Serializable]
     public sealed class Policies
@@ -30,6 +36,7 @@ namespace LittleGeorgies
         public Role Role;
         public Mood Mood = Mood.Happy;
         public Job Job;
+        public WorkPlan Plan;
         public int Apples;
         public bool Basket;
         public bool House;
@@ -49,9 +56,9 @@ namespace LittleGeorgies
     [Serializable]
     public sealed class DayReport
     {
-        public int Day, Harvested, Levied, Distributed, Ate, Hungry, BasketsMade, HousesMade;
+        public int Day, Harvested, Levied, RentCollected, Distributed, Ate, Hungry, BasketsMade, HousesMade;
         public string Summary => $"Day {Day}: {Harvested} harvested, {Ate} fed, {Hungry} hungry."
-            + (Levied > 0 || Distributed > 0 ? $" Levy {Levied}; relief {Distributed}." : "");
+            + (Levied > 0 || RentCollected > 0 || Distributed > 0 ? $" Tax {Levied}; rent {RentCollected}; relief {Distributed}." : "");
     }
 
     // Economy is independent of frames, sprites and Unity. Dawn snapshots policy; dusk settles dinner.
@@ -112,6 +119,20 @@ namespace LittleGeorgies
             if (dayOpen) throw new InvalidOperationException("Finish the current day before beginning another.");
             dayOpen = true;
             produced = false;
+            ReplanDay();
+        }
+
+        // Saves are made only at dawn, before production or dinner has been applied.
+        public void ResumeMorning()
+        {
+            dayOpen = true;
+            produced = false;
+            ReplanDay();
+        }
+
+        public void ReplanDay()
+        {
+            if (!dayOpen || produced) throw new InvalidOperationException("This day can no longer be replanned.");
             Today = Policy.Copy();
             if (!Specialist)
             {
@@ -124,12 +145,18 @@ namespace LittleGeorgies
                 p.Job = p.Role == Role.Builder ? (Today.BuildHomes && p.Mood != Mood.Broken ? Job.Houses : Job.Baskets)
                     : p.Role == Role.Chief ? Job.Administer : Job.Harvest;
 
-            if (!Today.RestWhenFed) return;
             int projected = AllApples + People.Sum(p => p.Yield);
+            foreach (var p in People)
+            {
+                if (p.Plan == WorkPlan.Rest && p.Mood != Mood.Broken) { p.Job = Job.Rest; projected -= p.Yield; }
+                if (p.Role == Role.Builder && p.Plan == WorkPlan.Baskets) p.Job = Job.Baskets;
+                if (p.Role == Role.Builder && p.Plan == WorkPlan.Houses && HousingUnlocked && p.Mood != Mood.Broken) p.Job = Job.Houses;
+            }
+            if (!Today.RestWhenFed) return;
             // Rest is an autonomous choice, reserved only when the forecast can still cover dinner.
             foreach (var p in People.OrderBy(p => p.Role == Role.Chief ? 1 : 0).ThenBy(p => p.Id))
             {
-                if (p.Mood != Mood.Tired || p.House) continue;
+                if (p.Plan != WorkPlan.Policy || p.Mood != Mood.Tired || p.House) continue;
                 bool canEat = Today.Food == FoodRule.SharedStore ? projected - p.Yield >= People.Count
                     : p.Apples > 0 || (Today.FeedHungry && CommonApples >= People.Count);
                 if (!canEat) continue;
@@ -138,7 +165,7 @@ namespace LittleGeorgies
             }
         }
 
-        public void Produce()
+        public void Produce(IReadOnlyDictionary<int, HarvestSettlement> land = null)
         {
             if (!dayOpen || produced) return;
             produced = true;
@@ -146,9 +173,22 @@ namespace LittleGeorgies
             {
                 if (p.Job == Job.Harvest)
                 {
-                    int output = p.Yield;
+                    HarvestSettlement award = null;
+                    if (land != null) land.TryGetValue(p.Id, out award);
+                    int output = land == null ? p.Yield : award == null ? 0 : award.Value;
                     Report.Harvested += output;
-                    if (Today.Food == FoodRule.SharedStore) CommonApples += output;
+                    if (land != null)
+                    {
+                        int tax = award == null ? 0 : award.Tax;
+                        int rent = award == null ? 0 : award.Rent;
+                        if (tax < 0 || rent < 0 || tax + rent > output) throw new InvalidOperationException("Invalid land settlement.");
+                        Report.Levied += tax;
+                        Report.RentCollected += rent;
+                        CommonApples += tax + rent;
+                        if (Today.Food == FoodRule.SharedStore) CommonApples += output - tax - rent;
+                        else p.Apples += output - tax - rent;
+                    }
+                    else if (Today.Food == FoodRule.SharedStore) CommonApples += output;
                     else
                     {
                         // Carry fractions so a 25% levy still applies to small two-apple harvests over time.

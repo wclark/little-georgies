@@ -56,7 +56,7 @@ namespace LittleGeorgies.Economy
             game = owner;
             font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             Folder = Path.Combine(Application.persistentDataPath, "EconomyAdmin");
-            bool smoke = Environment.GetCommandLineArgs().Contains("-lg-auction-smoke");
+            bool smoke = Environment.GetCommandLineArgs().Contains("-lg-auction-smoke") || Environment.GetCommandLineArgs().Contains("-lg-dossier-smoke");
             if (smoke)
             {
                 var args = Environment.GetCommandLineArgs();
@@ -87,14 +87,16 @@ namespace LittleGeorgies.Economy
             if (canvas == null) return;
             canvas.gameObject.SetActive(true);
             openedFrame = Time.frameCount;
-            game.Hud.SetVisible(false);
+            if (game.Desk != null) { game.Desk.StopRunning(); game.Desk.SetVisible(false); }
+            else game.Hud.SetVisible(false);
             EventSystem.current.SetSelectedGameObject(null);
             if (Result == null && !auctionPending && !IsBusy && LastError == null) RunAuction();
         }
         public void Close()
         {
             canvas.gameObject.SetActive(false);
-            game.Hud.SetVisible(true);
+            if (game.Desk != null) game.Desk.SetVisible(true);
+            else game.Hud.SetVisible(true);
             EventSystem.current.SetSelectedGameObject(null);
         }
         void Update()

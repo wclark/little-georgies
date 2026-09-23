@@ -15,6 +15,7 @@ namespace LittleGeorgies
         public VillageView View { get; private set; }
         public VillageHud Hud { get; private set; }
         public AuctionDesk Auction { get; private set; }
+        public SettlementDesk Desk { get; private set; }
         public bool Paused;
         public int Speed = 1;
         public int Selected;
@@ -30,15 +31,25 @@ namespace LittleGeorgies
             Application.targetFrameRate = 60;
             captureMode = Args().Contains("-lg-smoke") || Args().Contains("-lg-opening-smoke") || Args().Contains("-lg-auction-smoke");
             DebugMode = captureMode || Args().Contains("-lg-debug") || Args().Contains("-lg-village");
-            ResetSettlement(Args().Contains("-lg-village"));
-            Hud = gameObject.AddComponent<VillageHud>();
-            Hud.Initialize(this);
+            if (captureMode)
+            {
+                ResetSettlement(Args().Contains("-lg-village"));
+                Hud = gameObject.AddComponent<VillageHud>();
+                Hud.Initialize(this);
+            }
+            else
+            {
+                Desk = gameObject.AddComponent<SettlementDesk>();
+                Desk.Initialize(this);
+                Society = Desk.Session.Society;
+            }
             Auction = gameObject.AddComponent<AuctionDesk>();
             Auction.Initialize(this);
             var build = BuildInfo.Load();
             Debug.Log("LITTLE_GEORGIES_BUILD_INFO: " + JsonUtility.ToJson(build));
-            if (Args().Contains("-lg-economy") || (!captureMode && build.openEconomy)) Auction.Open();
+            if (Args().Contains("-lg-economy")) Auction.Open();
             if (captureMode) StartCoroutine(Args().Contains("-lg-auction-smoke") ? AuctionSmokeRun() : Args().Contains("-lg-opening-smoke") ? OpeningSmokeRun() : SmokeRun());
+            if (Args().Contains("-lg-dossier-smoke")) StartCoroutine(DossierSmokeRun());
         }
 
         public void ResetSettlement(bool village)
@@ -56,6 +67,7 @@ namespace LittleGeorgies
 
         void Update()
         {
+            if (Desk != null) return;
             if (Society == null) return;
             if (Auction != null && Auction.IsOpen) return;
             if (Input.GetKeyDown(KeyCode.F4)) { Auction.Open(); return; }
@@ -224,8 +236,8 @@ namespace LittleGeorgies
         bool CaptureFrame(string path)
         {
             // Render the same scene and canvas offscreen so hidden-window checks still capture pixels.
-            var camera = View.Camera;
-            var canvas = Auction.IsOpen ? Auction.RenderCanvas : Hud.RenderCanvas;
+            var camera = Desk != null ? Desk.Camera : View.Camera;
+            var canvas = Auction.IsOpen ? Auction.RenderCanvas : Desk != null ? Desk.RenderCanvas : Hud.RenderCanvas;
             int oldSortingOrder = canvas.sortingOrder;
             var target = RenderTexture.GetTemporary(Screen.width, Screen.height, 24, RenderTextureFormat.ARGB32);
             var oldActive = RenderTexture.active;

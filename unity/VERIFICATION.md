@@ -1,5 +1,45 @@
 # Verification
 
+## 2026-09-22: Dossier Village (Desktop Updated)
+
+- After signing setup, the owner authorized closing/rebuilding the local Windows
+  game. No cloud build, GitHub Action, TestFlight upload, or website deployment
+  was run. These game changes are local working-tree changes, not a cloud release.
+- Normal startup now creates a dossier UI and selectable seven-hex land table,
+  with no `VillageView`, animated actors, or legacy HUD. Reused the supplied
+  mood/role portrait assets without image edits.
+- Connected the existing society model to the exact VCG solver. Each harvesting
+  Georgie bids for at most one plot; integer value tax reduces bids, tax and rent
+  enter common apples once, and daily harvest/food conservation is verified.
+  Per-person plot preferences are editable in small whole-apple amounts.
+- Added persistent individual plans, group work/rest controls, manual or automatic
+  days, and separate automatic policy-village save/resume. Existing auction-admin
+  scenarios remain isolated. No private landownership or LVT was added.
+- Preserved one-person opening, earned growth and specialization, rolling happy
+  histories, broken-worker restrictions, baskets, and individual housing benefits.
+- `tools/Test-Windows.ps1 -Output Builds/Windows/LittleGeorgies.exe` passed on
+  the installed desktop build. Portable checks passed **6,577 assertions**:
+  538 society, 5,616 auction, and 423 settlement integration checks. Unity also
+  passed 538 society, 12,360 auction, and 423 settlement checks (**13,321 total**).
+- All **nine** native runtime reports passed: six existing village/auction
+  regressions and the new dossier screen at 1600 x 900, 1280 x 960, and 1600 x 740.
+  Dossier checks cover hex and individual navigation, value edits, continuous
+  background results, latest tax edit, next-day and automatic progression,
+  personal plans, five compact rows, save restoration and another settled day,
+  admin isolation, text bounds, and tax-slider handle containment.
+- Screenshots of the opening, policy desk, and five-Georgie view were inspected.
+  A slider handle/text overlap found visually was corrected and reverified.
+  This is automated Windows verification, not human balance testing or a
+  physical iPad/iPhone playtest. Mobile navigation and touch refinement remain.
+
+Evidence: `Artifacts/pipeline.json`, `Artifacts/core-checks.json`,
+`Artifacts/build.log`, `Artifacts/DossierDesktop`, `Artifacts/DossierTablet`,
+`Artifacts/DossierWide`, and the six legacy regression folders.
+
+Desktop game assembly SHA-256:
+
+`20012873B88EA02A191E518B203DBBFA0424F3C6DFA589180CDD7F82DA6B73B1`
+
 ## 2026-09-22: Setup-Only Publication
 
 - With owner approval, published the Unity project and pipeline on

@@ -11,7 +11,8 @@ public static class BuildIdentity
     {
         var info = new BuildInfo { version = PlayerSettings.bundleVersion,
             buildNumber = Environment.GetEnvironmentVariable("BUILD_NUMBER") ?? "local",
-            revision = Environment.GetEnvironmentVariable("GIT_COMMIT") ?? "local-uncommitted",
+            revision = Environment.GetEnvironmentVariable("GIT_COMMIT")
+                ?? Environment.GetEnvironmentVariable("BUILD_REVISION") ?? "local-uncommitted",
             builtUtc = DateTime.UtcNow.ToString("O"), unityVersion = Application.unityVersion,
             target = EditorUserBuildSettings.activeBuildTarget.ToString(), openEconomy = openEconomy };
         Directory.CreateDirectory("Assets/Resources");

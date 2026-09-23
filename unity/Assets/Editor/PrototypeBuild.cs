@@ -20,6 +20,7 @@ public static class PrototypeBuild
         Configure();
         Validate();
         AuctionChecks.Validate();
+        Debug.Log("LITTLE_GEORGIES_SETTLEMENT: " + SettlementChecks.Validate() + " checks passed");
         var args = Environment.GetCommandLineArgs();
         int outputIndex = Array.IndexOf(args, "-lg-build-output");
         string output = outputIndex >= 0 ? args[outputIndex + 1] : "Builds/Windows/LittleGeorgies.exe";

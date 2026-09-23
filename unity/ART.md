@@ -1,5 +1,14 @@
 # Prototype Art
 
+## Dossier Portraits (2026-09-22)
+
+`Assets/Resources/Portraits` contains unchanged copies of the twelve mood/role
+portraits from the web game's `assets/images`: `georgie-{mood}.png` and
+`{chief,farmer,builder}-{mood}-avatar.png`. These derive from the user-supplied
+character graphics; no new character art was generated for the dossier revision.
+Normal play now uses these static portraits and a UI hex grid. The animated scene
+assets below remain only for the legacy regression presentation.
+
 ## Staged Opening Art (2026-09-13)
 
 Built-in image generation was used for these two assets. The original full village remains a style reference but is no longer the runtime backdrop.
