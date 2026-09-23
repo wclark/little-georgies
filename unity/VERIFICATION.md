@@ -1,5 +1,29 @@
 # Verification
 
+## 2026-09-23: First iOS Cloud Build
+
+- The owner requested TestFlight playtesting on their iPad. Published the dossier
+  revision to `setup/unity-ios-pipeline` as
+  `8bdeaee37c26532e67d11166c28c7a6ccd19e2bf`; left the unrelated root README edit
+  unstaged. No main merge, website deployment, or GitHub Action was requested.
+- Reran portable preflight: **6,577 assertions passed**. Evidence is
+  `Artifacts/core-checks-ios-preflight.json`.
+- Reopened the saved target and verified manual-only scheduling, the exact
+  editor/Xcode versions, STANDARD Mac machine, and saved App Store credential.
+  Added full-screen landscape configuration and opaque icon import for iOS;
+  build metadata now also accepts Unity's `BUILD_REVISION` variable.
+- Manually triggered [iOS build #1](https://cloud.unity.com/organizations/1375991457548/projects/22a9185f-609f-4365-b527-d62132adc8a8/cloud-build/buildtargets/ios-testflight-manual/builds/1)
+  pinned to that commit. Unity reports **Success**, completed September 23 at
+  15:08 Pacific, 6m23s including a 3m03s wait; billable build time 3m19s.
+  Output is 52.78 MB, bundle ID `org.georgist.littlegeorgies`.
+- The artifact menu offers an IPA, build reports, full Xcode log, and dSYM.
+  Chrome blocked the automated IPA download (`ERR_BLOCKED_BY_CLIENT`), so the
+  package has not yet been inspected locally or independently signature-checked.
+- App Store Connect requires a fresh owner sign-in. No TestFlight upload has
+  occurred; upload credentials/automation, Apple processing, tester assignment,
+  and physical-device acceptance remain pending. Cloud build success does not
+  establish that the app is installable from TestFlight yet.
+
 ## 2026-09-22: Dossier Village (Desktop Updated)
 
 - After signing setup, the owner authorized closing/rebuilding the local Windows

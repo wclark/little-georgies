@@ -13,6 +13,12 @@ test build; it does not authorize a public App Store submission or release.
 Auto-build, scheduled builds, and automatic GitHub triggers must stay off.
 `VERIFICATION.md` distinguishes the local revision checks from earlier runs.
 
+The first manual iOS build, **#1**, succeeded on 2026-09-23 from commit `8bdeaee`.
+Its IPA is available in Unity's artifacts, but automated browser download was
+blocked. Apple sign-in, upload setup, TestFlight processing, and device testing
+remain pending. The setup facts below describe the earlier saved configuration;
+the build outcome is recorded in `VERIFICATION.md`.
+
 - Unity Cloud project: [Little Georgies](https://cloud.unity.com/organizations/1375991457548/projects/22a9185f-609f-4365-b527-d62132adc8a8).
 - Organization: `1375991457548`; project: `22a9185f-609f-4365-b527-d62132adc8a8`.
 - Audience: general audience, not primarily directed at children, confirmed by the owner.
