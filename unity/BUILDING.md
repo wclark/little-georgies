@@ -182,7 +182,7 @@ verify signing, compilation, or device behavior.
 The owner approved this signing identity and Unity storage on 2026-09-22.
 The owner could not access the agent-created AppData path from their PowerShell
 session. The verified owner-only handoff directory is now
-`%USERPROFILE%/Documents/LittleGeorgies-Signing`. It contains only the Unity
+`%USERPROFILE%/Documents/LittleGeorgies-Signing`. It contains the Unity
 handoff files: `LittleGeorgies-Distribution.p12`,
 `LittleGeorgies-AppStore.mobileprovision`, and `p12-password.dpapi`.
 The original private-key backup was not copied to Desktop or Documents.
@@ -203,11 +203,50 @@ Add-Type -AssemblyName System.Security
 
 Follow [Unity's signing guide](https://docs.unity.com/en-us/build-automation/sign-build-artifacts/sign-an-ios-application)
 and [Apple's upload requirements](https://developer.apple.com/help/app-store-connect/manage-builds/upload-builds).
-First verify that Build Automation creates a correctly signed `.ipa`. Then
-configure a TestFlight upload step with an App Store Connect API key in cloud
-secret storage. Upload automation and tester distribution are intentionally not
-enabled until the account, app record, signing, and first artifact are verified.
+The first signed IPA completed Apple processing on 2026-09-23. The owner approved
+a Developer-role App Store Connect API key named `Little Georgies Upload` for
+uploads from this PC only. Apple team keys cover all apps in the account; the
+local helper additionally restricts uploads to this app's ID and bundle ID.
+The `.p8` is in the same owner-only signing directory, not in GitHub or Unity.
+Moving that key into a cloud service requires separate owner approval.
 No script submits an app for App Store review or publishes a release.
+
+### Manual Upload from Windows
+
+`tools/upload-testflight.py` uses Apple's documented
+[Build Upload API](https://developer.apple.com/documentation/appstoreconnectapi/builduploads).
+It needs Python 3.11+ and `cryptography`, not Xcode on Windows. Obtain the IPA
+from the successful Unity build's artifact menu and keep it under ignored
+`Builds/iOS/<build-number>`. Never reuse an uploaded version/build number.
+
+Example from the repository root, replacing the key ID and issuer with the
+values in App Store Connect's API page (neither is the private key):
+
+```powershell
+python -B unity/tools/upload-testflight.py `
+  --ipa unity/Builds/iOS/1/LittleGeorgies-0.1.0-1.ipa `
+  --key "$env:USERPROFILE/Documents/LittleGeorgies-Signing/AuthKey_<KEY_ID>.p8" `
+  --key-id <KEY_ID> --issuer <ISSUER_ID> `
+  --report unity/Artifacts/ios-upload-1.json
+```
+
+The default is a read-only preflight or status check. Add `--upload` once to
+create and transfer a new build. Keep the generated report: it records upload
+IDs and the local SHA-256 without credentials or signed storage URLs. Subsequent
+runs with that report read status instead of making duplicate uploads.
+
+The helper verifies each server-received part's MD5 ETag before committing the
+file. Apple's optional `sourceFileChecksums` field is omitted; the first upload
+rejected a SHA-256 value there. If all parts transferred but final commit failed,
+`--commit-existing` verifies and commits that same file. Partial-transfer and
+lost-report recovery require inspection, not deleting the report and retrying.
+Do not log a JWT, private key, or signed upload URL.
+
+Run offline helper tests with `python -B unity/tools/test_upload_testflight.py`.
+After processing, use App Store Connect's TestFlight page to complete any
+owner-approved export-compliance answer and assign the build to the intended
+internal group. The existing `Clarks` group contains the owner's account.
+TestFlight delivery is separate from App Store release submission.
 
 ## Device Acceptance Gate
 

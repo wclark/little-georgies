@@ -1,5 +1,40 @@
 # Verification
 
+## 2026-09-23: TestFlight Upload
+
+- The owner downloaded Unity's IPA to the configured Downloads location on
+  `D:`. Copied it to ignored `Builds/iOS/1/LittleGeorgies-0.1.0-1.ipa`; both
+  copies have SHA-256
+  `326bc93973a431b0fb0153f821cb6bad17c3d43fd70dac95818f620c42e25f69`.
+- Inspected the IPA's actual Info.plist: bundle `org.georgist.littlegeorgies`,
+  version `0.1.0`, build `1`, iPhone/iPad, iOS 15 minimum, full-screen landscape,
+  Xcode 26.5 / iPhoneOS 26.5 SDK. The embedded profile matches the app/team,
+  is App Store distribution with debugging disabled, and expires 2027-09-22.
+  Its CMS signature verified cryptographically; this was not an independent
+  Mach-O code-signature or certificate-chain validation.
+- With explicit approval, created the Developer-role `Little Georgies Upload`
+  API key. The owner personally enabled API access and accepted Apple's terms.
+  Moved the downloaded private key into the owner-only signing folder outside
+  Git; no key was sent to Unity, GitHub, or another cloud service.
+- Uploaded all 55,343,657 bytes in 11 parts through Apple's public Build Upload
+  API. Apple's received ETags match local MD5s for every part. The optional
+  SHA-256 checksum field was rejected on initial commit; the same upload was
+  successfully committed without that optional field after part verification.
+  No duplicate upload or cloud rebuild was needed.
+- Apple reports upload **COMPLETE**, with no errors, warnings, or informational
+  issues. Upload/build ID: `4ec56dbd-7575-44cd-8e40-7bda6c3ee186`. The UI shows
+  version 0.1.0 (1) and **Missing Compliance**. The owner has been asked to approve
+  the export-compliance answer before internal distribution.
+- Added a repeatable PC-only upload helper with read-only default, app/bundle
+  restrictions, part validation, explicit commit recovery, and local report.
+  **Seven offline test cases passed**, including signature checks, destination
+  and range rejection, corrupt/missing ETags, and safe commit behavior.
+- The existing `Clarks` internal group contains the owner. No public release or
+  external testing was submitted. Physical iPad/iPhone acceptance remains open.
+
+Evidence: `Artifacts/ios-upload-1.json`, the local IPA, and the App Store Connect
+TestFlight build page. This supersedes the upload-pending status below.
+
 ## 2026-09-23: First iOS Cloud Build
 
 - The owner requested TestFlight playtesting on their iPad. Published the dossier
