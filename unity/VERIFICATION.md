@@ -22,15 +22,19 @@
   successfully committed without that optional field after part verification.
   No duplicate upload or cloud rebuild was needed.
 - Apple reports upload **COMPLETE**, with no errors, warnings, or informational
-  issues. Upload/build ID: `4ec56dbd-7575-44cd-8e40-7bda6c3ee186`. The UI shows
-  version 0.1.0 (1) and **Missing Compliance**. The owner has been asked to approve
-  the export-compliance answer before internal distribution.
+  issues. Upload/build ID: `4ec56dbd-7575-44cd-8e40-7bda6c3ee186`. The owner
+  selected and saved "None of the algorithms mentioned above" in Apple's
+  encryption form; the earlier **Missing Compliance** gate is cleared.
 - Added a repeatable PC-only upload helper with read-only default, app/bundle
   restrictions, part validation, explicit commit recovery, and local report.
   **Seven offline test cases passed**, including signature checks, destination
   and range rejection, corrupt/missing ETags, and safe commit behavior.
-- The existing `Clarks` internal group contains the owner. No public release or
-  external testing was submitted. Physical iPad/iPhone acceptance remains open.
+- Verified version **0.1.0 (1)** in the existing `Clarks` internal group with
+  status **Testing**, one tester, and a 90-day expiration. The owner's tester
+  entry is **Invited**. Saved playtest notes covering touch/layout, dossier and
+  hex selection, work/rest, economy controls, progression, and save/resume.
+- No public release or external testing was submitted. No extra cloud build
+  was run. Physical iPad/iPhone installation and gameplay remain unverified.
 
 Evidence: `Artifacts/ios-upload-1.json`, the local IPA, and the App Store Connect
 TestFlight build page. This supersedes the upload-pending status below.

@@ -248,6 +248,11 @@ owner-approved export-compliance answer and assign the build to the intended
 internal group. The existing `Clarks` group contains the owner's account.
 TestFlight delivery is separate from App Store release submission.
 
+On 2026-09-23, build `0.1.0 (1)` reached **Testing** in `Clarks`, and the owner's
+tester entry showed **Invited**. Open Apple's invitation on the iPad, accept it
+in TestFlight, and install Little Georgies. The build has a 90-day testing
+window. This establishes delivery availability, not a completed device playtest.
+
 ## Device Acceptance Gate
 
 Record build number and device/OS with every result. Install from TestFlight on
